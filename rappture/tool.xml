@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<run>
+<tool>
+  <title>LSST Photon Simulator</title>
+  <about>Example of simulating a star.
+
+  </about>
+  <command>
+     tclsh @tool/phosimwrapper.tcl @driver
+  </command>
+</tool>
+<input>
+  <string id="instanceCatalog">
+    <about>
+      <label>Instance Catalog</label>
+      <description>see https://dev.lsstcorp.org/trac/wiki/IS_instance_catalog</description>
+    </about>
+    <default>examples/star</default>
+  </string>
+  <string id="extraCommands">
+    <about>
+      <label>Physics Override Commands</label>
+      <description>see https://dev.lsstcorp.org/trac/wiki/IS_instance_catalog</description>
+    </about>
+    <default>examples/nobackground</default>
+  </string>
+  <boolean id="e2adc">
+    <about>
+      <label>Run e2adc</label>
+      <description>generate amplifier images.</description>
+    </about>
+    <default>0</default>
+  </boolean>
+</input>
+</run>
