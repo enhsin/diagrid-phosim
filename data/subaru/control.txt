@@ -1,0 +1,48 @@
+# Perturbation parameters
+#
+# old model uses columns 2-5 which will be obsoleted
+#
+# column 0: name of degree of freedom
+# column 1: type of degree of freedom
+# column 2: type of distribution (1=gaussian; 2=uniform) (old model)
+# column 3: parameter 1 (gaussian sigma or lower bound) (old model)
+# column 4: parameter 2 (gaussian mean or upper bound) (old model)
+# column 5: parameter set (old model)
+# column 6: fabrication/assembly tolerance (new model)
+# column 7: thermal derivative (new model)
+# column 8: pressure derivative (new model)
+# column 9: elevation derivative (new model)
+# column 10: hidden variable rms (new model)
+# column 11: surface string that are linked together
+#  
+# 0     1        2  3        4     5   6     7    8    9    10      11
+M1      phi      2  0        6.28  0   0.0   0.0  0.0  0.0  0.0     0
+M1      psi      2  0        6.28  0   0.0   0.0  0.0  0.0  0.0     0
+M1      theta    1  2.47e-7  0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      xdis     1  1.14e-3  0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      ydis     1  1.14e-3  0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      zdis     1  1.14e-3  0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z4       1  4.18e-5  0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z5       1  4.18e-5  0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z6       1  4.18e-5  0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z7       1  4.18e-5  0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z8       1  4.18e-5  0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z9       1  4.18e-5  0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z10      1  2.166e-5 0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z11      1  2.166e-5 0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z12      1  2.166e-5 0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z13      1  2.166e-5 0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z14      1  2.166e-5 0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z15      1  2.166e-5 0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z16      1  1.4e-5   0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z17      1  1.4e-5   0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z18      1  1.4e-5   0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z19      1  1e-5     0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z20      1  1e-5     0     1   0.0   0.0  0.0  0.0  0.0     0
+M1      z21      1  1e-5     0     1   0.0   0.0  0.0  0.0  0.0     0
+camera  phi      1  0        6.28  0   0.0   0.0  0.0  0.0  0.0     1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
+camera  psi      1  0        6.28  0   0.0   0.0  0.0  0.0  0.0     1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
+camera  theta    1  1.67e-5  0     1   0.0   0.0  0.0  0.0  0.0     1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
+camera  xdis     1  3.4e-3   0     1   0.0   0.0  0.0  0.0  0.0     1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
+camera  ydis     1  3.4e-3   0     1   0.0   0.0  0.0  0.0  0.0     1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
+camera  zdis     1  3.4e-3   0     1   0.0   0.0  0.0  0.0  0.0     1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16

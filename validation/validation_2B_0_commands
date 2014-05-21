@@ -1,0 +1,11 @@
+date 0
+lascatprob 0
+detectormode 0
+atmosphericdispersion 0
+pixelsize 0.5
+chipangle 0.0
+clearturbulence
+cleartracking
+clearclouds
+zenith_v 1000.0
+raydensity 0.0

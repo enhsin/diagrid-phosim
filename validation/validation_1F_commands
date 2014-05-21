@@ -1,0 +1,36 @@
+date 0
+domeseeing 0.0
+atmosphericdispersion 0
+straylight 0
+pixelsize 5.0
+body 11 0 0.0
+body 11 1 0.0
+body 11 2 0.0
+body 11 3 0.0
+body 11 4 0.0
+body 11 5 0.0
+chipangle 0.0
+izernike 3 0 0.0
+izernike 3 1 0.0
+izernike 3 2 0.0
+izernike 3 3 0.0
+izernike 3 4 0.0
+izernike 3 5 0.0
+izernike 3 6 0.0
+izernike 3 7 0.0
+izernike 3 8 0.0
+izernike 3 9 0.0
+izernike 3 10 0.0
+izernike 3 11 0.0
+izernike 3 12 0.0
+izernike 3 13 0.0
+izernike 3 14 0.0
+izernike 3 15 0.0
+izernike 3 16 0.0
+izernike 3 17 0.0
+izernike 3 18 0.0
+izernike 3 19 0.0
+izernike 3 20 0.0
+izernike 3 21 0.0
+zenith_v 1000.0
+raydensity 0.0

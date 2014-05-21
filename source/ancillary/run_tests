@@ -1,0 +1,4 @@
+#!/bin/bash
+
+./test_phosim_parser < test.pars
+./test_fits_utils

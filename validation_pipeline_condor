@@ -1,0 +1,137 @@
+#!/bin/csh 
+validation/unittest >& validation/unittest_output
+cd source/ancillary/ ; ./test_phosim_parser < test.pars >> ../../validation/unittest_output ; cd ../../.
+#----------------------------
+#1C: ATMOSPHERE PSF VALIDATION
+#----------------------------
+set comm = "-e 0 -g condor -s R01_S11|R02_S11|R03_S11|R10_S11|R11_S11|R12_S11|R13_S11|R14_S11|R20_S11|R21_S11|R22_S00|R22_S01|R22_S02|R22_S10|R22_S11|R22_S12|R22_S20|R22_S21|R22_S22|R23_S11|R24_S11|R30_S11|R31_S11|R32_S11|R33_S11|R34_S11|R41_S11|R42_S11|R43_S11"
+foreach obs (0 1 2 3 4)
+./phosim validation/validation_1C_0${obs}_catalog -c validation/validation_1C_commands -o validation/ $comm
+end
+
+#----------------------------
+#1A: DIFFRACTION APPROX.
+#----------------------------
+foreach obs ( 0 1 2 3 4 5 )
+./phosim validation/validation_1A_0${obs}_catalog -c validation/validation_1A_0${obs}_commands -o validation/ -e 0 -g condor -s 'R22_S11'
+end
+
+#----------------------------
+#1B: SCREEN CONVERGENCE
+#----------------------------
+foreach obs (0 1 2 3 4 5 6 7 8)
+./phosim validation/validation_1B_catalog -c 'validation/validation_1B_0'$obs'_commands' -o validation/ -e 0 -g condor -s 'R22_S11'
+end
+
+#----------------------------
+#1D: ATMOSPHERE ASTROMETRIC VALIDATION
+#----------------------------
+foreach obs (0 1 2 3 4 5 6 7 8 10)
+./phosim validation/validation_1D_0${obs}_catalog -c validation/validation_1D_commands -o validation/ -e 0 -g condor -s 'R22_S11'
+end
+
+#----------------------------
+#2A: SPOT DIAGRAM VALIDATION
+#----------------------------
+foreach obs ( 0 1 2 3 4 )
+./phosim validation/validation_2A_${obs}_catalog -c validation/validation_2A_commands -o validation/ -e 0 -g condor -s 'R42_S11'
+end
+
+#--------------------------
+#2B: OPTICS AND TRACKING
+#--------------------------
+foreach obs (0 1 2 3 4 5 6 7 8 9)
+./phosim 'validation/validation_2B_0'$obs'_catalog' -c validation/validation_2B_0_commands -o validation/ -e 0 -g condor -s 'R32_S21'
+end
+./phosim validation/validation_2B_10_catalog -c validation/validation_2B_1_commands -o validation/ -e 0 -g condor -s 'R32_S21'
+./phosim validation/validation_2B_11_catalog -c validation/validation_2B_1_commands -o validation/ -e 0 -g condor -s 'R32_S21'
+./phosim validation/validation_2B_12_catalog -c validation/validation_2B_2_commands -o validation/ -e 0 -g condor -s 'R32_S21'
+./phosim validation/validation_2B_13_catalog -c validation/validation_2B_3_commands -o validation/ -e 0 -g condor -s 'R32_S21'
+./phosim validation/validation_2B_14_catalog -c validation/validation_2B_3_commands -o validation/ -e 0 -g condor -s 'R32_S21'
+
+#---------------------------
+#2D: DIFFRACTION VALIDATION
+#---------------------------
+./phosim validation/validation_2D_catalog -c validation/validation_2D_commands -o validation/ -e 0 -g condor -s 'R22_S11'
+
+#----------------------------
+#3A: DIFFUSE VALIDATION
+#----------------------------
+./phosim validation/validation_3A_catalog -c validation/validation_3A_commands -o validation/ -g condor -s 'R10_S00'
+#rm validation/eimage*3000*
+
+#--------------------------
+#2C: THROUGHPUT VALIDATION
+#--------------------------
+foreach obs (0 1) 
+foreach fil (0 1 2 3 4 5)
+./phosim 'validation/validation_2C_'$obs$fil'_catalog' -c validation/validation_2C_commands -o validation/ -e 0 -g condor -s 'R22_S11'
+#rm validation/*22$obs$fil*
+#mv work/throughput_eimage_22$obs$fil* validation/.
+end
+end
+
+foreach obs (2)  
+foreach fil (0 1 2 3 4 5)
+./phosim 'validation/validation_2C_'$obs$fil'_catalog' -c validation/validation_2C_commands -o validation/ -e 0 -g condor -s 'R24_S12'
+#rm validation/*22$obs$fil*
+#mv work/throughput_eimage_22$obs$fil* validation/.
+end
+end
+
+#---------------------------------
+#3B: CHARGE DIFFUSION VALIDATION
+#---------------------------------
+foreach fil (0 1 2 3 4 5)
+foreach sil (0 1 2 3 4)
+./phosim 'validation/validation_3B_0'$fil'_catalog' -c 'validation/validation_3B_commands_0'$sil -o validation/ -e 0 -g condor -s 'R22_S11'
+end
+end
+#----------------------------
+# Dynamic Transmission Test
+#----------------------------
+foreach obs ( 0 1 2 3 4 5 )
+./phosim validation/validation_4B_0${obs}_catalog -c validation/validation_4B_00_commands -o validation/ -e 0 -g condor -s 'R22_S11'
+./phosim validation/validation_4B_0${obs}_catalog -c validation/validation_4B_01_commands -o validation/ -e 0 -g condor -s 'R22_S11'
+end
+
+#----------------------------
+# Bright star optimization test
+#----------------------------
+./phosim validation/validation_4C_catalog -c validation/validation_4C_00_commands -o validation/ -e 0 -g condor -s 'R22_S11'
+./phosim validation/validation_4C_catalog -c validation/validation_4C_01_commands -o validation/ -e 0 -g condor -s 'R22_S11'
+
+#----------------------------
+#SPEED TESTS
+#----------------------------
+#date > validation/speed_out_0
+#./phosim validation/validation_4A_00_catalog -c validation/validation_4A_00_commands -o validation/
+#date > validation/speed_out_1
+#./phosim validation/validation_4A_01_catalog -c validation/validation_4A_01_commands -o validation/ >& validation/speed_out
+#date > validation/speed_out_2
+#---------------------------------
+#HIGH AIRMASS PSF
+#---------------------------------
+set comm = "-e 0 -g condor -s R01_S11|R02_S11|R03_S11|R10_S11|R11_S11|R12_S11|R13_S11|R14_S11|R20_S11|R21_S11|R22_S00|R22_S01|R22_S02|R22_S10|R22_S11|R22_S12|R22_S20|R22_S21|R22_S22|R23_S11|R24_S11|R30_S11|R31_S11|R32_S11|R33_S11|R34_S11|R41_S11|R42_S11|R43_S11"
+foreach obs ( 0 1 2 3 4 )
+./phosim validation/validation_1E_0${obs}_catalog -c validation/validation_1E_commands -o validation/ $comm
+end
+#---------------------------------
+#OPTICS PSF
+#---------------------------------
+set comm = "-e 0 -g condor -s R01_S11|R02_S11|R03_S11|R10_S11|R11_S11|R12_S11|R13_S11|R14_S11|R20_S11|R21_S11|R22_S00|R22_S01|R22_S02|R22_S10|R22_S11|R22_S12|R22_S20|R22_S21|R22_S22|R23_S11|R24_S11|R30_S11|R31_S11|R32_S11|R33_S11|R34_S11|R41_S11|R42_S11|R43_S11"
+foreach obs ( 0 1 2 3 4 )
+./phosim validation/validation_1F_0${obs}_catalog -c validation/validation_1F_commands -o validation/ $comm
+end
+
+#----------------------------
+# Background optimization test
+#----------------------------
+./phosim validation/validation_4D_catalog -c validation/validation_4D_00_commands -o validation/ -e 0 -g condor -s 'R10_S00'
+./phosim validation/validation_4D_catalog -c validation/validation_4D_01_commands -o validation/ -e 0 -g condor -s 'R10_S00'
+
+#ghost pattern
+#kolmogorov spectrum
+#seeing distribution
+#background intensity
+

@@ -1,0 +1,12 @@
+date 0
+ccdtemp 183.15
+pixelsize 1.0
+diffractionmode	0
+lascatprob 0.0
+cleartracking
+atmosphericdispersion 0
+clearperturbations
+clearopacity
+zenith_v 1000.0
+raydensity 0.0
+detectormode 0

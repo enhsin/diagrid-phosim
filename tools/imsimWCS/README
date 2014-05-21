@@ -1,0 +1,22 @@
+This python script was written by Jim Pizagno at U.Washington.
+This README file was written on 7-May-2009.
+
+The code worked with python version:
+Python 2.5.2
+
+The code WCSsolution.py takes an image from the Image Simulation
+output, which contains a linear TAN-SIP, and applies a polynomial
+WCS solution. It uses the TAN-SIP convention, as described in 
+document WCSdoc.pdf.
+
+The code runs Source Extractor to find stars. Matches the 
+positions predicted in the file "StarCatalogFormatTrim.dat" to 
+the positions found by Source Extractor.  The code applies a 
+sigma clipping routine, excluding all data points outside
+of "sigmaclip".  It searches for stars that match within a 
+magnitude given by "Dmag_limit" and within search radii 
+given by "radius_limit" and "radius_min".  
+
+Please send any bugs (there will be) to:
+jpizagno@astro.washington.edu
+

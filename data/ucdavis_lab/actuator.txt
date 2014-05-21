@@ -1,0 +1,5 @@
+# Write commends after the pound sign. Only 1 pound sign per line.
+# The last two columns are actuactor distance (a_j in the slide) and defualt compensation error (delta a_j)
+# The  distance and  error can be over-ridden by the "actuator" command line in the instance Catalog command file
+# The number of columns here should match the number of body and zernike lines in the control.txt file.
+

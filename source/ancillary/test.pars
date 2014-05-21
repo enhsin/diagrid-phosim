@@ -1,0 +1,12 @@
+my_string foobar
+my_float 2.1
+my_integer 342
+chipid 0 R01_S00
+chipid 1 R01_S01
+chipid 2 R01_S02
+chipid 3 R01_S10
+chipid 4 R01_S11
+chipid 5 R01_S12
+chipid 6 R01_S20
+chipid 7 R01_S21
+chipid 8 R01_S22

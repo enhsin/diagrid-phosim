@@ -1,0 +1,9 @@
+# tracking information
+# windjitter is rms angle of wind jitter (degrees) after 1 minute of drifting
+# rotation jitter is rms arcseconds of rotation jitter at visit time
+# elevation jitter is the arcseconds of elevation jitter at visit time
+# azimuth jitter is the arcsecond of azimuth jitter at visit time
+windjitter 2.5
+rotationjitter 1
+elevationjitter 0.02
+azimuthjitter 0.02
