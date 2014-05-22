@@ -3,15 +3,20 @@ package require Rappture
 # open the XML file containing the run parameters
 set driver [Rappture::library [lindex $argv 0]]
 
-set instanceCatalog [$driver get input.(instanceCatalog).current]
-set extraCommands [$driver get input.(extraCommands).current]
+set phosimDir [$driver get tool.version.application.directory(tool)]
+append phosimDir "/../"
+
+set instanceCatalog [format {%s%s} $phosimDir [$driver get input.(instanceCatalog).current]]
+set extraCommands [format {%s%s} $phosimDir [$driver get input.(extraCommands).current]]
 set e2adc [$driver get input.boolean(e2adc).current]
-set outputDir "bin/output/"
-set workDir "bin/work/"
-set binDir "bin/"
-set dataDir "data/"
-set sedDir "data/SEDs"
-set imageDir "data/images"
+set binDir [format {%sbin/} $phosimDir]
+set dataDir [format {%sdata/} $phosimDir]
+set sedDir [format {%sdata/SEDs/} $phosimDir]
+set imageDir [format {%sdata/images/} $phosimDir]
+
+file mkdir work output
+set outputDir "output/"
+set workDir "work/"
 
 set obsID "99999999"
 
@@ -21,7 +26,8 @@ if {$e2adc == "yes"} {
     set e2adcflag 0
 }
 
-set status [catch {Rappture::exec python bin/phosim.py $instanceCatalog -c $extraCommands -e $e2adcflag -o $outputDir -w $workDir -b $binDir -d $dataDir --sed=$sedDir --image=$imageDir} out]
+set status [catch {Rappture::exec python $binDir/phosim.py $instanceCatalog -c $extraCommands -e $e2adcflag -o $outputDir -w $workDir -b $binDir -d $dataDir --sed=$sedDir --image=$imageDir} out]
+
 $driver put output.log $out
 
 if {$status == 0} {

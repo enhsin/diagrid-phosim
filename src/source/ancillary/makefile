@@ -1,7 +1,7 @@
 CC = ${CCS}
 ERASE = rm -f
-CFLAGS = -g -Wall -c -I${CFIO_INC_DIR} -I${FFTW3_INC_DIR} -I ../ -I ../../
-LFLAGS = -g -Wall -L${FFTW3_DIR} -lfftw3 -L${CFIODIR} -lcfitsio -lm -lz
+CFLAGS = -g -Wall -c -I${CFIO_INC_DIR} -I ../ -I ../../
+LFLAGS = -g -Wall -lfftw3 -L${CFIODIR} -lcfitsio -lm -lz
 UT_CFLAGS = -I${BOOST_INC_DIR} 
 UT_LFLAGS = -L${BOOST_LIB_DIR} -lboost_unit_test_framework
 

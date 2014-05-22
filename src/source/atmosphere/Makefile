@@ -1,7 +1,7 @@
 CC 	= ${CCS}
 ERASE = rm -f
-CFLAGS = -g -Wall -c -I${CFIO_INC_DIR}  -I${FFTW3_INC_DIR} -I ../
-LFLAGS = -g -Wall -L${FFTW3_DIR} -lfftw3 -L${CFIODIR} -lcfitsio -lm
+CFLAGS = -g -Wall -c -I${CFIO_INC_DIR} -I ../
+LFLAGS = -g -Wall -lfftw3 -L${CFIODIR} -lcfitsio -lm
 OBJECT = atmosphere.o turb2d.o cloud.o airglow.o \
 	rng_mwc.o fits_utils.o atmosphere_creator.o phosim_parser.o readtext.o 
 
