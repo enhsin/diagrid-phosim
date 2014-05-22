@@ -8,7 +8,6 @@ all: e2adc
 
 e2adc: $(OBJECTS)
 	$(CC) $(OBJECTS) $(LFLAGS) -o e2adc
-	cp e2adc ../../bin            
 
 rng_mwc.o: ../raytrace/rng_mwc.cpp
 	$(CC) $(CFLAGS) ../raytrace/rng_mwc.cpp -o rng_mwc.o

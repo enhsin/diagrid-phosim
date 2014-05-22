@@ -6,7 +6,13 @@ set driver [Rappture::library [lindex $argv 0]]
 set instanceCatalog [$driver get input.(instanceCatalog).current]
 set extraCommands [$driver get input.(extraCommands).current]
 set e2adc [$driver get input.boolean(e2adc).current]
-set outputDir "output/"
+set outputDir "bin/output/"
+set workDir "bin/work/"
+set binDir "bin/"
+set dataDir "data/"
+set sedDir "data/SEDs"
+set imageDir "data/images"
+
 set obsID "99999999"
 
 if {$e2adc == "yes"} {
@@ -15,7 +21,7 @@ if {$e2adc == "yes"} {
     set e2adcflag 0
 }
 
-set status [catch {Rappture::exec python phosim.py $instanceCatalog -c $extraCommands -e $e2adcflag} out]
+set status [catch {Rappture::exec python bin/phosim.py $instanceCatalog -c $extraCommands -e $e2adcflag -o $outputDir -w $workDir -b $binDir -d $dataDir --sed=$sedDir --image=$imageDir} out]
 $driver put output.log $out
 
 if {$status == 0} {

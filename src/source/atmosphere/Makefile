@@ -21,7 +21,6 @@ fits_utils.o: ../ancillary/fits_utils.cpp ../ancillary/fits_utils.h
 
 atmosphere: $(OBJECT)
 	$(CC) $(OBJECT) $(LFLAGS) -o atmosphere
-	cp atmosphere ../../bin
 
 atmosphere.o: atmosphere.cpp airglow.h cloud.h turb2d.h
 	$(CC) $(CFLAGS) atmosphere.cpp -o atmosphere.o

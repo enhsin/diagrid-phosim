@@ -15,14 +15,14 @@
       <label>Instance Catalog</label>
       <description>see https://dev.lsstcorp.org/trac/wiki/IS_instance_catalog</description>
     </about>
-    <default>examples/star</default>
+    <default>src/examples/star</default>
   </string>
   <string id="extraCommands">
     <about>
       <label>Physics Override Commands</label>
       <description>see https://dev.lsstcorp.org/trac/wiki/IS_instance_catalog</description>
     </about>
-    <default>examples/nobackground</default>
+    <default>src/examples/nobackground</default>
   </string>
   <boolean id="e2adc">
     <about>

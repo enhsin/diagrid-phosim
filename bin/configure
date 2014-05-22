@@ -20,7 +20,12 @@ if ( $UNAME == 'Darwin')  then
 		set local="/sw ${local}"
    endif
 endif
-set dir=`pwd`
+set dir=`pwd`/..
+
+foreach av ( $argv )
+  set arg = `echo $av | sed -e "s/=/ /"`
+  if ( $arg[1] == '--prefix' ) set dir = $arg[2]
+end
 
 echo "local: $local"
 
@@ -43,7 +48,7 @@ echo -n 'Would you like to have this script: (a) install these from source, (b) 
 
 if ($choice == 'a') then
 
-cd source
+cd $dir/src/source
 rm -Rf cfitsio
 tar xvf cfitsio3300.tar
 cd cfitsio
@@ -62,18 +67,17 @@ cd ..
 #tar -zxvf nanoflann-1.1.7.tar.gz
 #wget http://bitbucket.org/eigen/eigen/get/3.2.0.tar.gz
 #tar -zxvf 3.2.0.tar.gz
-cd ..
 
-cd bin
+cd $dir/bin
 rm -f setup
 echo 'setenv CCP '$CCP >! setup
 echo 'setenv CCS '$CCS >> setup
-echo 'setenv CFIODIR '$dir'/source/cfitsio/lib/' >> setup
-echo 'setenv CFIO_INC_DIR '$dir'/source/cfitsio/include/' >> setup
-echo 'setenv FFTW3_DIR '$dir'/source/fftw-3.3.2/lib/' >> setup
-echo 'setenv FFTW3_INC_DIR '$dir'/source/fftw-3.3.2/include/' >> setup
-#echo 'setenv FLANN_INC_DIR '$dir'/source/nanoflann-1.1.7/include' >> setup
-#set eigendir = `ls -d $dir/source/eigen-eigen-*`
+echo 'setenv CFIODIR '$dir'/src/source/cfitsio/lib/' >> setup
+echo 'setenv CFIO_INC_DIR '$dir'/src/source/cfitsio/include/' >> setup
+echo 'setenv FFTW3_DIR '$dir'/src/source/fftw-3.3.2/lib/' >> setup
+echo 'setenv FFTW3_INC_DIR '$dir'/src/source/fftw-3.3.2/include/' >> setup
+#echo 'setenv FLANN_INC_DIR '$dir'/src/source/nanoflann-1.1.7/include' >> setup
+#set eigendir = `ls -d $dir/src/source/eigen-eigen-*`
 #echo 'setenv EIGEN_INC_DIR '$eigendir >> setup
 
 endif
@@ -182,15 +186,15 @@ set dir = $<
 set string=`find $dir -name "fftw3.h" |& grep -v "ermission denied" | tail -1 | sed -e "s/fftw3.h//"`
 echo $string | awk '{print "setenv FFTW3_INC_DIR "$0}' >> setup
 
-echo -n "Please enter the path to nanoflann.hpp: "
-set dir = $<
-set string=`find $dir -name "nanoflann.hpp" |& grep -v "ermission denied" | tail -1 | sed -e "s/nanoflann.hpp//"`
-echo $string | awk '{print "setenv FLANN_INC_DIR "$0}' >> setup
+#echo -n "Please enter the path to nanoflann.hpp: "
+#set dir = $<
+#set string=`find $dir -name "nanoflann.hpp" |& grep -v "ermission denied" | tail -1 | sed -e "s/nanoflann.hpp//"`
+#echo $string | awk '{print "setenv FLANN_INC_DIR "$0}' >> setup
 
-echo -n "Please enter the path to Eigen: "
-set dir = $<
-set string=`find $dir -name "Dense" | grep Eigen | & grep -v "ermission denied" | tail -1 | sed -e "s/Eigen\/Dense//"`
-echo $string | awk '{print "setenv EIGEN_INC_DIR "$0}' >> setup
+#echo -n "Please enter the path to Eigen: "
+#set dir = $<
+#set string=`find $dir -name "Dense" | grep Eigen | & grep -v "ermission denied" | tail -1 | sed -e "s/Eigen\/Dense//"`
+#echo $string | awk '{print "setenv EIGEN_INC_DIR "$0}' >> setup
 
 endif
 
@@ -199,5 +203,5 @@ endif
 echo ' '
 echo 'The photon simulator is now configured.'
 echo ' '
-echo 'Type "make" to complete the installation.'
+echo 'Type "cd src; make all install" to complete the installation.'
 echo ' '

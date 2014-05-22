@@ -8,7 +8,6 @@ all: raytrace
 
 raytrace: $(OBJECTS)
 	 $(CC) $(OBJECTS) $(LFLAGS) -o ./raytrace
-	cp raytrace ../../bin/.
 
 main.o: main.cpp
 	$(CC) $(CFLAGS) main.cpp -o main.o

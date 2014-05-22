@@ -8,7 +8,6 @@ all: trim
 
 trim: $(OBJECTS)
 	 $(CC) $(OBJECTS) $(LFLAGS) -o ./trim
-	cp trim ../../bin/.
 
 readtext.o: ../ancillary/readtext.h ../ancillary/readtext.cpp
 	$(CC) $(CFLAGS) ../ancillary/readtext.cpp -o readtext.o
