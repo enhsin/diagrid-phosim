@@ -1,7 +1,7 @@
 CC = ${CCP}
 ERASE = rm -f
-CFLAGS = -g -O3 -ffast-math -Wall -c -I${CFIO_INC_DIR} -I ../
-LFLAGS = -g -O3 -ffast-math -Wall -I${CFIO_INC_DIR} -L${CFIODIR} -lcfitsio -lfftw3 -lm -lz
+CFLAGS = -g -O3 -ffast-math -Wall -c -I ../
+LFLAGS = -g -O3 -ffast-math -Wall -lcfitsio -lfftw3 -lm -lz
 OBJECTS =   main.o observation.o image.o rng_mwc.o raytrace.o galaxy.o dust.o event.o grating.o counter.o silicon.o readtext.o surface.o coating.o perturbation.o obstruction.o screen.o medium.o air.o chip.o contamination.o fea.o
 
 all: raytrace

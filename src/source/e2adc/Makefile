@@ -1,7 +1,7 @@
 CC 	= ${CCP}
 ERASE = rm -f
-CFLAGS = -g -O3 -Wall -c -I${CFIO_INC_DIR} -I ../
-LFLAGS = -g -Wall -I${CFIO_INC_DIR} -L${CFIODIR} -lcfitsio -lm
+CFLAGS = -g -O3 -Wall -c -I ../
+LFLAGS = -g -Wall -lcfitsio -lm
 OBJECTS = e2adc.o rng_mwc.o readtext.o fits_utils.o
 
 all: e2adc
