@@ -3,16 +3,16 @@ package require Rappture
 # open the XML file containing the run parameters
 set driver [Rappture::library [lindex $argv 0]]
 
-set phosimDir [$driver get tool.version.application.directory(tool)]
-append phosimDir "/../"
+set installdir [file dirname [info script]]
+set phosimDir [file join $installdir ..]
 
-set instanceCatalog [format {%s%s} $phosimDir [$driver get input.(instanceCatalog).current]]
-set extraCommands [format {%s%s} $phosimDir [$driver get input.(extraCommands).current]]
+set instanceCatalog [file join $phosimDir [$driver get input.(instanceCatalog).current]]
+set extraCommands [file join $phosimDir [$driver get input.(extraCommands).current]]
 set e2adc [$driver get input.boolean(e2adc).current]
-set binDir [format {%sbin/} $phosimDir]
-set dataDir [format {%sdata/} $phosimDir]
-set sedDir [format {%sdata/SEDs/} $phosimDir]
-set imageDir [format {%sdata/images/} $phosimDir]
+set binDir [file join $phosimDir bin]
+set dataDir [file join $phosimDir data]
+set sedDir [file join $phosimDir data SEDs]
+set imageDir [file join $phosimDir data images]
 
 file mkdir work output
 set outputDir "output/"
