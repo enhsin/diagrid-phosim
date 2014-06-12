@@ -542,7 +542,8 @@ class PhosimFocalplane(object):
             for p in jobs:
                 p.join()
         elif self.grid == 'condor':
-            condor.submitDag(self)
+            #condor.submitDag(self)
+            print "Finish writing DAG input %s/dag_%s.dag" % (self.workDir,self.observationID)
         os.chdir(self.phosimDir)
         return
 
