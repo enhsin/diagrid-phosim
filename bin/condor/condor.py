@@ -3,7 +3,7 @@ import subprocess
 
 ## Condor method to setup directories
 def initEnvironment(self):
-    self.dagfile=open(self.phosimDir+'/dag_'+self.observationID+'.dag','w')
+    self.dagfile=open(self.workDir+'/dag_'+self.observationID+'.dag','w')
     if not os.path.exists(self.workDir+'/logs'):
         os.makedirs(self.workDir+'/logs')
     if not os.path.exists(self.workDir+'/errors'):
@@ -80,8 +80,8 @@ def writeSubmit(self, job, jobName, fid='none', ckpt=0):
 def writeTrimDag(self,jobName,tc,nexp):
     checkpoint=self.grid_opts.get('checkpoint', 12)
     self.dagfile.write('JOB %s %s/%s.submit\n' % (jobName,self.workDir,jobName))
-    self.dagfile.write('SCRIPT POST %s condor/chip posttrim %s %d %d %s %s %d\n' %
-                       (jobName,self.observationID,tc,nexp,self.dataDir,self.workDir,checkpoint))
+    self.dagfile.write('SCRIPT POST %s %s/condor/chip posttrim %s %d %d %s %s %d\n' %
+                       (jobName,self.phosimDir,self.observationID,tc,nexp,self.dataDir,self.workDir,checkpoint))
     self.dagfile.write('RETRY %s 3\n' % (jobName))
     writeSubmit(self,'trim',jobName)
 
@@ -94,8 +94,8 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
         self.dagfile.write('JOB raytrace_%s %s/raytrace_%s.submit\n' % (fidckpt,self.workDir,fidckpt))
         self.dagfile.write('RETRY raytrace_%s 3\n' % (fidckpt))
         if ckpt==0:
-            self.dagfile.write('SCRIPT PRE raytrace_%s_0 condor/chip preraytrace %s %s\n' %
-                          (fid,observationID+'_'+str(tc),self.workDir))
+            self.dagfile.write('SCRIPT PRE raytrace_%s_0 %s/condor/chip preraytrace %s %s\n' %
+                          (fid,self.phosimDir,observationID+'_'+str(tc),self.workDir))
             self.dagfile.write('PARENT trim_%s_%d CHILD raytrace_%s_0\n' % (observationID,tc,fid))
         else:
             self.dagfile.write('PARENT raytrace_%s_%d CHILD raytrace_%s\n' % (fid,ckpt-1,fidckpt))
@@ -108,18 +108,17 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
     if run_e2adc:
         self.dagfile.write('JOB e2adc_%s %s/e2adc_%s.submit\n' % (fid,self.workDir,fid))
         self.dagfile.write('RETRY e2adc_%s 3\n' % fid)
-        self.dagfile.write('SCRIPT PRE e2adc_%s condor/chip pree2adc %s %s\n' % (fid,fid,self.workDir))
-        self.dagfile.write('SCRIPT POST e2adc_%s condor/chip poste2adc %s %s %s %s %s %s %s\n' %
-                      (fid,observationID,self.filt,cid,eid,self.outputDir,self.instrDir,self.workDir))
+        self.dagfile.write('SCRIPT PRE e2adc_%s %s/condor/chip pree2adc %s %s\n' % (fid,self.phosimDir,fid,self.workDir))
+        self.dagfile.write('SCRIPT POST e2adc_%s %s/condor/chip poste2adc %s %s %s %s %s %s %s\n' %
+                      (fid,self.phosimDir,observationID,self.filt,cid,eid,self.outputDir,self.instrDir,self.workDir))
         self.dagfile.write('PARENT raytrace_%s_%d CHILD e2adc_%s\n' % (fid,checkpoint,fid))
         writeSubmit(self,'e2adc','e2adc_'+fid,fid)
     else:
-        self.dagfile.write('SCRIPT POST raytrace_%s_%d condor/chip postraytrace %s %s %s %s %s %s\n' %
-                      (fid,checkpoint,observationID,self.filt,cid,eid,self.outputDir,self.workDir))
+        self.dagfile.write('SCRIPT POST raytrace_%s_%d %s/condor/chip postraytrace %s %s %s %s %s %s\n' %
+                      (fid,checkpoint,self.phosimDir,observationID,self.filt,cid,eid,self.outputDir,self.workDir))
 
 def submitDag(self):
     self.dagfile.close()
-    os.chdir(self.phosimDir)
     command='condor_submit_dag dag_'+self.observationID+'.dag'
     if subprocess.call(command, shell=True) != 0:
         raise RuntimeError("Error running %s" % command)
