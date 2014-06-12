@@ -5,10 +5,28 @@ set driver [Rappture::library [lindex $argv 0]]
 
 set installdir [file dirname [info script]]
 set phosimDir [file join $installdir ..]
+set exampleDir [file join $phosimDir examples]
 
-set instanceCatalog [file join $phosimDir [$driver get input.(instanceCatalog).current]]
-set extraCommands [file join $phosimDir [$driver get input.(extraCommands).current]]
-set e2adc [$driver get input.boolean(e2adc).current]
+set choice [$driver get input.(Mode).current]
+if {$choice == "Example"} {
+  set instanceCatalog [file join $exampleDir [$driver get input.group.(example).(instanceCatalog).current]]
+  set extraCommands [file join $exampleDir [$driver get input.group.(example).(extraCommands).current]]
+  set e2adc [$driver get input.group.(example).boolean(e2adc).current]
+} elseif {$choice == "User"} {
+  set instanceCatalogData [$driver get input.group.(user).(instanceCatalog).current]
+  set instanceCatalog "instanceCatalog[pid]"
+  set fid [open $instanceCatalog w]
+  puts $fid $instanceCatalogData
+  close $fid
+  set extraCommandsData [$driver get input.group.(user).(extraCommands).current]
+  set extraCommands "extraCommands[pid]"
+  set fid [open $extraCommands w]
+  puts $fid $extraCommandsData
+  close $fid
+  set e2adc [$driver get input.group.(user).boolean(e2adc).current]
+} else {
+  exit 0
+} 
 set binDir [file join $phosimDir bin]
 set dataDir [file join $phosimDir data]
 set sedDir [file join $phosimDir data SEDs]
@@ -18,13 +36,21 @@ file mkdir work output
 set outputDir "output/"
 set workDir "work/"
 
-set obsID "99999999"
-
 if {$e2adc == "yes"} {
     set e2adcflag 1
 } else {
     set e2adcflag 0
 }
+
+set obsID "9999"
+set pattern "obshistid"
+set fid [open $instanceCatalog r]
+while {[gets $fid line] >= 0} {
+    if {[regexp $pattern $line]} {
+       set obsID [lindex [split $line] end]
+    }
+}
+close $fid
 
 set status [catch {Rappture::exec python $binDir/phosim.py $instanceCatalog -c $extraCommands -e $e2adcflag -o $outputDir -w $workDir -b $binDir -d $dataDir --sed=$sedDir --image=$imageDir} out]
 

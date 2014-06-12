@@ -2,34 +2,100 @@
 <run>
 <tool>
   <title>LSST Photon Simulator</title>
-  <about>Example of simulating a star.
+  <about>
+Choose the type of simulation, specify or provide catalog and command files, and click the Simulate button.
 
+* Example: run simple simulations with the setting from examples/ directory. 
+
+* User: run user defined simulations. 
+
+* Validation: run validation tasks.
   </about>
   <command>
      tclsh @tool/phosimwrapper.tcl @driver
   </command>
 </tool>
 <input>
-  <string id="instanceCatalog">
+  <choice id="Mode">
     <about>
-      <label>Instance Catalog</label>
-      <description>see https://dev.lsstcorp.org/trac/wiki/IS_instance_catalog</description>
+      <label>Type of Simulation</label>
+      <description>Run exemplary or arbitrary simulations, or validation tasks</description>
     </about>
-    <default>examples/star</default>
-  </string>
-  <string id="extraCommands">
-    <about>
-      <label>Physics Override Commands</label>
-      <description>see https://dev.lsstcorp.org/trac/wiki/IS_instance_catalog</description>
-    </about>
-    <default>examples/nobackground</default>
-  </string>
-  <boolean id="e2adc">
-    <about>
-      <label>Run e2adc</label>
-      <description>generate amplifier images.</description>
-    </about>
-    <default>0</default>
-  </boolean>
+    <option>
+      <about>
+        <label>Example</label>
+        <description>Run catalog and command files in examples/ directory</description>
+      </about>
+    </option>
+    <option>
+      <about>
+        <label>User</label>
+        <description>Run user provided catalog and command files</description>
+      </about>
+    </option>
+    <option>
+      <about>
+        <label>Validation</label>
+        <description>Run validations</description>
+      </about>
+    </option>
+    <default>Example</default>
+  </choice>
+
+  <group id="tabs">
+    <group id="example">
+      <about> <label>Example</label> </about>
+      <string id="instanceCatalog">
+        <about>
+          <label>Instance Catalog</label>
+        </about>
+        <default>star</default>
+      </string>
+      <string id="extraCommands">
+        <about>
+          <label>Physics Override Commands</label>
+        </about>
+        <default>nobackground</default>
+      </string>
+      <boolean id="e2adc">
+        <about>
+          <label>Run e2adc</label>
+          <description>generate amplifier images.</description>
+        </about>
+        <default>0</default>
+      </boolean>
+    </group>
+
+    <group id="user">
+      <about> <label>User</label> </about>
+      <string id="instanceCatalog">
+        <about>
+          <label>Instance Catalog</label>
+          <description>Upload a instance catalog</description>
+        </about>
+        <size>binary</size>
+        <default></default>
+      </string>
+      <string id="extraCommands">
+        <about>
+          <label>Physics Override Commands</label>
+          <description>Upload a command file</description>
+        </about>
+        <size>binary</size>
+        <default></default>
+      </string>
+      <boolean id="e2adc">
+        <about>
+          <label>Run e2adc</label>
+          <description>generate amplifier images.</description>
+        </about>
+        <default>0</default>
+      </boolean>
+    </group>
+
+    <group id="validation">
+      <about> <label>Validation</label> </about>
+    </group>
+  </group>
 </input>
 </run>
