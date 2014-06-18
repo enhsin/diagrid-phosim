@@ -200,6 +200,7 @@ void Trim::setup() {
 
     nCatalog = catalog.size();
     nChip = chipid.size();
+    if (flatDirectory == 1) instrdir = ".";
 
     std::istringstream wavelengthPars(readText::get(instrdir + "/central_wavelengths.txt", filter));
     double wavelength;
@@ -211,7 +212,6 @@ void Trim::setup() {
     scale = (0.2*ARCSEC/DEGREE)*(focalLength*DEGREE);
     extendedBuffer = (60.0*ARCSEC/DEGREE)*(focalLength*DEGREE);
 
-    if (flatDirectory == 1) instrdir = ".";
     if (nChip > maxChip || nCatalog > maxCatalog ){
         std::cout << "Cannot split into that many files.\n";
         exit(1);

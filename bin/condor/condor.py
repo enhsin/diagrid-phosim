@@ -66,6 +66,7 @@ def writeSubmit(self, job, jobName, fid='none', ckpt=0):
     else:
         if job == 'trim':
             submitfile.write('transfer_input_files =  %s/focalplanelayout.txt' % self.instrDir)
+            submitfile.write(', %s/central_wavelengths.txt' % self.instrDir)
             for line in open('catlist_'+self.observationID+'.pars'):
                 submitfile.write(', %s' % line.split()[2])
             submitfile.write('\n')
