@@ -1,7 +1,7 @@
 CC 	= ${CCP}
 ERASE = rm -f
 CFLAGS = -g -O3 -Wall -c -I ../
-LFLAGS = -g -Wall -lcfitsio -lm
+LFLAGS = -g -Wl,-Bstatic -lcfitsio -Wl,-Bdynamic -lm -lz -lpthread
 OBJECTS = e2adc.o rng_mwc.o readtext.o fits_utils.o
 
 all: e2adc

@@ -1,7 +1,7 @@
 CC 	= ${CCS}
 ERASE = rm -f
 CFLAGS = -g -Wall -c -I ../
-LFLAGS = -g -Wall -lfftw3 -lcfitsio -lm
+LFLAGS = -g -Bstatic -lcfitsio -Wl,-Bdynamic -lfftw3 -lm -lpthread
 OBJECT = atmosphere.o turb2d.o cloud.o airglow.o \
 	rng_mwc.o fits_utils.o atmosphere_creator.o phosim_parser.o readtext.o 
 

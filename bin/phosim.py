@@ -144,6 +144,8 @@ class PhosimFocalplane(object):
         if self.grid == 'condor':
             assert 'universe' in self.grid_opts
             self.flatdir=True if self.grid_opts['universe'] == 'vanilla' else False
+        elif self.grid == 'diagrid':
+            self.flatdir=True
 
      ## doPreproc is a method to run all of the non-chip steps.
      def doPreproc(self, instanceCatalog, extraCommands, sensor):
@@ -400,6 +402,7 @@ class PhosimFocalplane(object):
           chipcounter2=0
           tc=0
           i=0
+          trimJobID=[]
           for cid in chipID:
                if chipcounter1==0:
                     jobName='trim_'+self.observationID+'_'+str(tc)
@@ -411,6 +414,7 @@ class PhosimFocalplane(object):
                if runFlag[i]==1:
                     chipcounter2+=1
                if chipcounter1==9 or cid==lastchip:   #Do groups of 9 to reduce grid computing I/O
+                    trimJobID.append('none')
                     pfile.write(open('obs_'+self.observationID+'.pars').read())
                     if self.flatdir:
                          for line in open('catlist_'+self.observationID+'.pars'):
@@ -425,10 +429,13 @@ class PhosimFocalplane(object):
                          elif self.grid == 'condor':
                               nexp=self.nsnap if devtype[i]=='CCD' else int(self.vistime/devvalue[i])
                               condor.writeTrimDag(self,jobName,tc,nexp)
+                         elif self.grid == 'diagrid':
+                              nexp=self.nsnap if devtype[i]=='CCD' else int(self.vistime/devvalue[i])
+                              #trimJobID[tc]=diagrid.writeTrimDag(self,jobName,tc,nexp)
                          else:
                               sys.stderr.write('Unknown grid type: %s' % self.grid)
                               sys.exit(-1)
-                    if self.grid in ['no', 'cluster'] or (self.grid == 'condor' and chipcounter2==0):
+                    if self.grid in ['no', 'cluster'] or (self.grid in ['condor', 'diagrid'] and chipcounter2==0):
                          removeFile(inputParams)
                     chipcounter1=0
                     chipcounter2=0
@@ -438,6 +445,7 @@ class PhosimFocalplane(object):
           self.runFlag = runFlag
           self.devtype = devtype
           self.devvalue = devvalue
+          self.trimJobID = trimJobID
 
      #scheduleRaytrace sets up the raytrace & e2adc jobs and also figures out the
      #numbers of exposures to perform.
@@ -516,6 +524,9 @@ class PhosimFocalplane(object):
                                 sys.stdout.write('No submitter callback in self.grid_opts for grid "cluster".\n')
                         elif self.grid == 'condor':
                             condor.writeRaytraceDag(self,cid,eid,tc,run_e2adc)
+                        elif self.grid == 'diagrid':
+                            diagrid.writeRaytraceDag(self,cid,eid,tc,run_e2adc)
+                            #print 'skip raytrace'
 
                         removeFile('image_'+fid+'.pars')
                         ex+=1
@@ -544,6 +555,8 @@ class PhosimFocalplane(object):
         elif self.grid == 'condor':
             #condor.submitDag(self)
             print "Finish writing DAG input %s/dag_%s.dag" % (self.workDir,self.observationID)
+        elif self.grid == 'diagrid':
+            diagrid.submitDax(self)
         os.chdir(self.phosimDir)
         return
 
@@ -553,6 +566,8 @@ class PhosimFocalplane(object):
             return
         if self.grid == 'condor':
             self.initCondorEnvironment()
+        elif self.grid == 'diagrid':
+            self.initDiagridEnvironment()
         elif self.grid == 'cluster':
             self.initClusterEnvironment()
         self.execEnvironmentInitialized = True
@@ -600,6 +615,12 @@ class PhosimFocalplane(object):
         import condor
         condor.initEnvironment(self)
 
+     def initDiagridEnvironment(self):
+        sys.path.append(self.phosimDir+'/diagrid')
+        global diagrid
+        import diagrid
+        diagrid.initEnvironment(self)
+
      ## Cluster methods
      def initClusterEnvironment(self):
         pass
@@ -642,6 +663,8 @@ def main():
      grid_opts = {'numproc': opt.numproc}
      if opt.grid == 'condor':
           grid_opts = {'universe': opt.universe, 'checkpoint': opt.checkpoint}
+     elif opt.grid == 'diagrid':
+          grid_opts = {'checkpoint': opt.checkpoint}
      elif opt.grid == 'cluster':
           grid_opts = {'script_writer': jobChip}
 

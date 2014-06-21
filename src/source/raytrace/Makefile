@@ -1,7 +1,7 @@
 CC = ${CCP}
 ERASE = rm -f
 CFLAGS = -g -O3 -ffast-math -Wall -c -I ../
-LFLAGS = -g -O3 -ffast-math -Wall -lcfitsio -lfftw3 -lm -lz
+LFLAGS = -g -O3 -ffast-math -Wl,-Bstatic -lcfitsio -Wl,-Bdynamic -lfftw3 -lm -lz -lpthread
 OBJECTS =   main.o observation.o image.o rng_mwc.o raytrace.o galaxy.o dust.o event.o grating.o counter.o silicon.o readtext.o surface.o coating.o perturbation.o obstruction.o screen.o medium.o air.o chip.o contamination.o fea.o
 
 all: raytrace
