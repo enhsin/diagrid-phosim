@@ -16,8 +16,19 @@ install: all
 	install -D validation/unittest ../bin/
 
 clean:
-	rm -f source/raytrace/*.o; rm -f source/trim/*.o; rm -f source/e2adc/*.o; rm -f source/instrument/*.o; rm -f source/atmosphere/*.o ; rm -f source/ancillary/*.o; rm -f validation/*.o
+	rm -f source/raytrace/*.o
+	rm -f source/trim/*.o
+	rm -f source/e2adc/*.o
+	rm -f source/instrument/*.o
+	rm -f source/atmosphere/*.o
+	rm -f source/ancillary/*.o
+	rm -f validation/*.o
 
 distclean: clean
-	rm -f ../bin/raytrace; rm -f ../bin/trim; rm -f ../bin/e2adc; rm -f ../bin/instrument; rm -f ../bin/atmosphere; rm -f  ../bin/unittest
+	rm -f ../bin/raytrace
+	rm -f ../bin/trim
+	rm -f ../bin/e2adc
+	rm -f ../bin/instrument
+	rm -f ../bin/atmosphere
+	rm -f ../bin/unittest
 
