@@ -68,7 +68,7 @@ def writeTrimDag(self,jobName,tc,nexp):
     for line in open(jobName+'.pars'):
         if "chipid" in line:
             cid=line.split()[2]
-            trim.uses( File('trimcatalog_'+self.observationID+'_'+cid+'.pars'), link=Link.OUTPUT, transfer=True, register=False) 
+            trim.uses( File('trimcatalog_'+self.observationID+'_'+cid+'.pars'), link=Link.OUTPUT) 
 
     self.dax.addJob(trim)
     return jobID
@@ -126,15 +126,14 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
             fp.addPFN(PFN("file://" + os.path.join(os.getcwd(),'tracking_'+observationID+'.pars'), "local"))
             self.dax.addFile(fp)
             if ckpt!=checkpoint:
-                eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt.fits"), link=Link.OUTPUT, transfer=True, register=False)')
-                eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp.fits"), link=Link.OUTPUT, transfer=True, register=False)')
+                eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt.fits"), link=Link.OUTPUT, transfer=False, register=False)')
+                eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp.fits"), link=Link.OUTPUT, transfer=False, register=False)')
         else:
-            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt.fits"), link=Link.INOUT, transfer=True)')
-            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp.fits"), link=Link.INOUT, transfer=True)')
+            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt.fits"), link=Link.INPUT)')
+            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp.fits"), link=Link.INPUT)')
         if ckpt==checkpoint:
-            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'.fits"), link=Link.OUTPUT, transfer=True, register=False)')
+            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'.fits"), link=Link.OUTPUT)')
 
-        #addProfile(Profile(namespace="env",key="LD_LIBRARY_PATH",value=""))
         eval('self.dax.addJob(raytrace'+str(ckpt)+')')
 
         if ckpt==0:
@@ -143,6 +142,8 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
             print 'skip'
         else:
             eval('self.dax.depends(parent=raytrace'+str(ckpt-1)+',child=raytrace'+str(ckpt)+')')
+            if ckpt>1:
+                eval('self.dax.depends(parent=raytrace0,child=raytrace'+str(ckpt)+')')
 
         pfile=open('raytrace_'+fidckpt+'.pars','w')
         pfile.write(open('raytrace_'+fid+'.pars').read())
@@ -169,8 +170,9 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
         for line in open(segfile):
             aid=line.split()[0]
             if cid in line and aid != cid:
-                e2adc.uses(File(instrument+'_a_'+observationID+'_'+aid+'_'+eid+'.fits'), link=Link.OUTPUT, transfer=True, register=False)
+                e2adc.uses(File(instrument+'_a_'+observationID+'_'+aid+'_'+eid+'.fits'), link=Link.OUTPUT)
 
+        e2adc.invoke('start', os.path.join(self.binDir,'condor','chip') + " pree2adc " + fid + " " + self.workDir) 
         self.dax.addJob(e2adc)
         eval('self.dax.depends(parent=raytrace'+str(checkpoint)+',child=e2adc)')
     else:
