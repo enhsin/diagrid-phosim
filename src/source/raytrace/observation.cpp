@@ -1361,6 +1361,14 @@ int Observation::parser () {
     if (flatdir == 1) {
         instrdir  =  ".";
         bindir  =  ".";
+        imagedir = ".";
+        std::ostringstream tarName;
+        tarName << "SEDs_" << obshistid << "_" << chipid << ".tar";
+        std::ifstream tarFile(tarName.str().c_str());
+        if (tarFile.good()) {
+            std::string tarCommand = "tar xf " + tarName.str();
+            system(tarCommand.c_str());
+        }
     }
 
     focalplanefile = instrdir + "/focalplanelayout.txt";
