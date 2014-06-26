@@ -41,7 +41,7 @@ void Image::writeImageFile () {
     FILE *indafile;
 
     status = 0;
-    std::string filename = "!"+outputdir+"/"+outputfilename+".fits";
+    std::string filename = "!"+outputdir+"/"+outputfilename+".fits.gz";
     fits_create_file(&faptr, filename.c_str(), &status);
     naxesa[0] = 1; naxesa[1] = 1;
     fits_create_img(faptr, FLOAT_IMG, 2, naxesa, &status);

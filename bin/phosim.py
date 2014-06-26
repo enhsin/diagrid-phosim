@@ -40,7 +40,6 @@ def jobChip(observationID, cid, eid, filt, outputDir, binDir, instrDir, instrume
     fid = observationID + '_' + cid + '_' + eid
     segfile = instrDir+'/segmentation.txt'
     runProgram("raytrace < raytrace_"+fid+".pars", binDir)
-    runProgram("gzip -f "+instrument+"_e_"+fid+".fits")
     removeFile('raytrace_'+fid+'.pars')
     if run_e2adc:
         runProgram("e2adc < e2adc_"+fid+".pars", binDir)
@@ -48,10 +47,9 @@ def jobChip(observationID, cid, eid, filt, outputDir, binDir, instrDir, instrume
         for line in open(segfile):
             aid=line.split()[0]
             if cid in line and aid != cid:
-                rawImage=instrument+'_a_'+observationID+'_'+aid+'_'+eid+'.fits'
-                runProgram("gzip -f "+rawImage)
+                rawImage=instrument+'_a_'+observationID+'_'+aid+'_'+eid+'.fits.gz'
                 rawImageRename=outputDir+'/'+instrument+'_a_'+observationID+'_f'+filt+'_'+aid+'_'+eid+'.fits.gz'
-                shutil.move(rawImage+'.gz',rawImageRename)
+                shutil.move(rawImage,rawImageRename)
     eImage=instrument+'_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz'
     eImageRename=outputDir+'/'+instrument+'_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz'
     shutil.move(eImage,eImageRename)

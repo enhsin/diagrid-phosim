@@ -78,10 +78,9 @@ def postraytrace(argv):
     cleanup('raytrace_'+observationID+'_'+cid+'_'+eid,workDir)
 
     os.chdir(workDir)
-    eImage='lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits' 
+    eImage='lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz' 
     eImageRename=outputDir+'/lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz'
     if os.path.exists(eImage):
-        runProgram('gzip -f '+eImage)
         shutil.move(eImage+'.gz',eImageRename)
  
  
@@ -90,10 +89,6 @@ def pree2adc(argv):
     workDir=argv[3]
 
     cleanup('raytrace_'+fid,workDir)
-
-    os.chdir(workDir) 
-    if os.path.exists('lsst_e_'+fid+'.fits'): 
-        runProgram('gzip -f lsst_e_'+fid+'.fits')
 
 def poste2adc(argv):
     observationID=argv[2]
@@ -112,11 +107,9 @@ def poste2adc(argv):
     for line in open(segfile):
         aid=line.split()[0]
         if cid in line and aid != cid:
-            rawImage='lsst_a_'+observationID+'_'+aid+'_'+eid+'.fits'
-            runProgram("gzip -f "+rawImage)
-
+            rawImage='lsst_a_'+observationID+'_'+aid+'_'+eid+'.fits.gz'
             rawImageRename=outputDir+'/lsst_a_'+observationID+'_f'+filt+'_'+aid+'_'+eid+'.fits.gz'
-            shutil.move(rawImage+'.gz',rawImageRename)
+            shutil.move(rawImage,rawImageRename)
             tarFiles+=rawImageRename.split('/')[-1]+' '
 
     eImage='lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz' 

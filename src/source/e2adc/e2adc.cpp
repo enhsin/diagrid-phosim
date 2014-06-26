@@ -496,7 +496,7 @@ void E2adc::writeFitsImage() {
         }
 
         std::ostringstream outfile;
-        outfile << "!" << instr << "_a_" << obshistid << "_" << outchipid[l] << "_E" << std::setfill('0') << std::setw(3) << exposureid << ".fits";
+        outfile << "!" << instr << "_a_" << obshistid << "_" << outchipid[l] << "_E" << std::setfill('0') << std::setw(3) << exposureid << ".fits.gz";
         int fflag[] = {1, serialread[l], parallelread[l]};
         if (readorder == 0) fflag[0] = 0;
         float dcrpix[] = {-outminx[l], -outminy[l]};

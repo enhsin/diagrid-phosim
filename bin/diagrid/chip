@@ -59,46 +59,43 @@ def postraytrace(argv):
     filt=argv[3]
     cid=argv[4]
     eid=argv[5]
+    outputDir=argv[6]
+    workDir=argv[7]
 
-    eImage='lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits' 
-    eImageRename='lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz'
+    eImage=workDir+'/lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz' 
+    eImageRename=outputDir+'/lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz'
     if os.path.exists(eImage):
-        runProgram('gzip -f '+eImage)
-        shutil.move(eImage+'.gz',eImageRename)
+        shutil.move(eImage,eImageRename)
  
  
-def pree2adc(argv):
-    fid=argv[2]
-
-    if os.path.exists('lsst_e_'+fid+'.fits'): 
-        runProgram('gzip -f lsst_e_'+fid+'.fits')
-
 def poste2adc(argv):
     observationID=argv[2]
     filt=argv[3]
     cid=argv[4]
     eid=argv[5]
-    
+    outputDir=argv[6]
+    instrDir=argv[7]
+    workDir=argv[8]
 
+    os.chdir(workDir)
     tarFiles=''
-    segfile='segmentation.txt'
+    segfile=os.path.join(instrDir,'segmentation.txt')
     for line in open(segfile):
         aid=line.split()[0]
         if cid in line and aid != cid:
-            rawImage='lsst_a_'+observationID+'_'+aid+'_'+eid+'.fits'
-            runProgram("gzip -f "+rawImage)
+            rawImage='lsst_a_'+observationID+'_'+aid+'_'+eid+'.fits.gz'
+            rawImageRename=outputDir+'/lsst_a_'+observationID+'_f'+filt+'_'+aid+'_'+eid+'.fits.gz'
+            shutil.move(rawImage,rawImageRename)
+            tarFiles+=rawImageRename.split('/')[-1]+' '
 
-            rawImageRename='lsst_a_'+observationID+'_f'+filt+'_'+aid+'_'+eid+'.fits.gz'
-            shutil.move(rawImage+'.gz',rawImageRename)
-            tarFiles+=(rawImageRename+' ')
-
-    eImage='lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz' 
-    eImageRename='lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz' 
+    eImage='lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz'
+    eImageRename=outputDir+'/lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz'
     shutil.move(eImage,eImageRename)
-    tarFiles+=eImageRename
+    tarFiles+=(eImageRename.split('/')[-1])
 
-    tar='lsst_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.tar' 
-    runProgram('tar cf '+tar+' '+tarFiles)
+    os.chdir(outputDir)
+    tar='lsst_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.tar'
+    runProgram('tar cf '+tar+' '+tarFiles+' --remove-files')
 
 
 function=sys.argv[1]

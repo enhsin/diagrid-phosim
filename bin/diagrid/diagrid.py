@@ -6,9 +6,6 @@ from Pegasus.DAX3 import *
 def initEnvironment(self):
     # Create a abstract dag
     self.dax=ADAG('phosim')
-    self.addTrim=False
-    self.addRaytrace=False
-    self.addE2adc=False
 
     # Add input file to the DAX-level replica catalog
     fp=File("version")
@@ -41,14 +38,20 @@ def initEnvironment(self):
         fp.addPFN(PFN("file://" + os.path.join(self.dataDir, 'cosmic_rays', 'iray'+str(n)+'.txt'), "local"))
         self.dax.addFile(fp)
 
+    e_trim = Executable(namespace="phosim", name="trim", os="linux", arch="x86_64", installed=False)
+    e_trim.addPFN(PFN("file://" + os.path.join(self.binDir,'trim'), "condorpool"))
+    self.dax.addExecutable(e_trim)
+
+    e_raytrace = Executable(namespace="phosim", name="raytrace", os="linux", arch="x86_64", installed=False)
+    e_raytrace.addPFN(PFN("file://" + os.path.join(self.binDir,'raytrace'), "condorpool"))
+    self.dax.addExecutable(e_raytrace)
+
+    e_e2adc = Executable(namespace="phosim", name="e2adc", os="linux", arch="x86_64", installed=False)
+    e_e2adc.addPFN(PFN("file://" + os.path.join(self.binDir,'e2adc'), "condorpool"))
+    self.dax.addExecutable(e_e2adc)
 
 def writeTrimDag(self,jobName,tc,nexp):
     checkpoint=self.grid_opts.get('checkpoint', 12)
-    if not self.addTrim:
-        e_trim = Executable(namespace="phosim", name="trim", os="linux", arch="x86_64", installed=False)
-        e_trim.addPFN(PFN("file://" + os.path.join(self.binDir,'trim'), "condorpool"))
-        self.dax.addExecutable(e_trim)
-        self.addTrim=True 
     jobID=self.dax.nextJobID()
     trim = Job(namespace="phosim", name="trim", id=jobID)
     trim.setStdin(jobName+'.pars')
@@ -78,11 +81,6 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
     observationID=self.observationID
     fid=observationID + '_' + cid + '_' + eid
     instrument=self.instrDir.split("/")[-1]
-    if not self.addRaytrace:
-        e_raytrace = Executable(namespace="phosim", name="raytrace", os="linux", arch="x86_64", installed=False)
-        e_raytrace.addPFN(PFN("file://" + os.path.join(self.binDir,'raytrace'), "condorpool"))
-        self.dax.addExecutable(e_raytrace)
-        self.addRaytrace=True
     for ckpt in range(checkpoint+1):
         fidckpt=fid+'_'+str(ckpt)
         jobName='raytrace_'+fidckpt
@@ -132,7 +130,13 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
             eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt.fits"), link=Link.INPUT)')
             eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp.fits"), link=Link.INPUT)')
         if ckpt==checkpoint:
-            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'.fits"), link=Link.OUTPUT)')
+            fileName=instrument+'_e_'+fid+'.fits.gz'
+            eval('raytrace'+str(ckpt)+'.uses(File(fileName), link=Link.OUTPUT)')
+            if not run_e2adc:
+                eval('raytrace'+str(ckpt)+'.addProfile(Profile(namespace="dagman", key="POST", value="postraytrace"))')
+                eval('raytrace'+str(ckpt)+'.addProfile(Profile(namespace="dagman", key="POST.PATH.postraytrace", value=os.path.join(self.binDir,"diagrid","chip")))')
+                arg='postraytrace %s %s %s %s %s %s' % (observationID,self.filt,cid,eid,self.outputDir,self.workDir)
+                eval('raytrace'+str(ckpt)+'.addProfile(Profile(namespace="dagman", key="POST.ARGUMENTS", value=arg))')
 
         eval('self.dax.addJob(raytrace'+str(ckpt)+')')
 
@@ -151,11 +155,6 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
         pfile.write("checkpointtotal %d\n" % checkpoint)
         pfile.close()
     if run_e2adc:
-        if not self.addE2adc:
-            e_e2adc = Executable(namespace="phosim", name="e2adc", os="linux", arch="x86_64", installed=False)
-            e_e2adc.addPFN(PFN("file://" + os.path.join(self.binDir,'e2adc'), "condorpool"))
-            self.dax.addExecutable(e_e2adc)
-            self.addE2adc=True
         jobName='e2adc_'+fid
         e2adc = Job(namespace="phosim", name="e2adc")
         e2adc.setStdin(jobName+'.pars')
@@ -170,13 +169,15 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
         for line in open(segfile):
             aid=line.split()[0]
             if cid in line and aid != cid:
-                e2adc.uses(File(instrument+'_a_'+observationID+'_'+aid+'_'+eid+'.fits'), link=Link.OUTPUT)
-
-        e2adc.invoke('start', os.path.join(self.binDir,'condor','chip') + " pree2adc " + fid + " " + self.workDir) 
+                e2adc.uses(File(instrument+'_a_'+observationID+'_'+aid+'_'+eid+'.fits.gz'), link=Link.OUTPUT)
+        fileName=instrument+'_'+observationID+'_f'+self.filt+'_'+cid+'_'+eid+'.tar'
+        e2adc.addProfile(Profile(namespace="dagman", key="POST", value="poste2adc"))
+        e2adc.addProfile(Profile(namespace="dagman", key="POST.PATH.poste2adc", value=os.path.join(self.binDir,"diagrid","chip")))
+        arg='poste2adc %s %s %s %s %s %s %s' % (observationID,self.filt,cid,eid,self.outputDir,self.instrDir,self.workDir)
+        e2adc.addProfile(Profile(namespace="dagman", key="POST.ARGUMENTS", value=arg))
         self.dax.addJob(e2adc)
         eval('self.dax.depends(parent=raytrace'+str(checkpoint)+',child=e2adc)')
-    else:
-        print run_e2adc
+
 
 def submitDax(self):
     fp=open('phosim_'+self.observationID+'.dax','w')
