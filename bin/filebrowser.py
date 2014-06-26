@@ -119,6 +119,7 @@ class LocalPath(object):
 		if newpath.remote:
 			newpath.copyfrom(self)
 		else:
+			newpath = newpath.join(self.basename())
 			if self.file:
 				shutil.copy(self.path, newpath.path)
 			elif self.dir:
@@ -300,7 +301,7 @@ class FileTree(wx.TreeCtrl):
 		il = wx.ImageList(16,16)
 		self.fldridx = il.Add(wx.ArtProvider.GetBitmap(wx.ART_FOLDER,
 													   wx.ART_OTHER, (16,16)))
-		self.fldropenidx = il.Add(wx.ArtProvider.GetBitmap("folder-open",
+		self.fldropenidx = il.Add(wx.ArtProvider.GetBitmap(wx.ART_FOLDER,
 														  wx.ART_OTHER, (16,16)))
 		self.fileidx = il.Add(wx.ArtProvider.GetBitmap(wx.ART_NORMAL_FILE,
 													   wx.ART_OTHER, (16,16)))
@@ -461,7 +462,7 @@ class MyFrame(wx.Frame):
 		# menu bar
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
-		toolsMenu = wx.Menu()
+#		toolsMenu = wx.Menu()
 		
 		newwinitem = fileMenu.Append(-1, 'New Window')
 		self.Bind(wx.EVT_MENU, self.newwindow, newwinitem)
@@ -472,17 +473,20 @@ class MyFrame(wx.Frame):
 		sshitem = fileMenu.Append(-1, 'Connect to SSH Server')
 		self.Bind(wx.EVT_MENU, self.sshconnect, sshitem)
 		
+		importitem = fileMenu.Append(-1, 'Import File')
+		self.Bind(wx.EVT_MENU, self.importfile, importitem)
+		
 #		importitem = fileMenu.Append(-1, 'Import Files')
 #		self.Bind(wx.EVT_MENU, self.importfile, importitem)
 		
 #		exportitem = fileMenu.Append(-1, 'Download Files')
 #		self.Bind(wx.EVT_MENU, self.exportfile, exportitem)
 		
-		submititem = toolsMenu.Append(-1, 'Submit')
-		self.Bind(wx.EVT_MENU, self.showsubmitwindow, submititem)
+#		submititem = toolsMenu.Append(-1, 'Submit')
+#		self.Bind(wx.EVT_MENU, self.showsubmitwindow, submititem)
 		
 		menubar.Append(fileMenu, '&File')
-		menubar.Append(toolsMenu, '&Tools')
+#		menubar.Append(toolsMenu, '&Tools')
 		self.SetMenuBar(menubar)
 		
 		# main splitters
@@ -563,6 +567,7 @@ class MyFrame(wx.Frame):
 		self.Layout()
 		
 		wx.EVT_TREE_SEL_CHANGED(self, tree.GetId(), self.treeselectionchanged)
+		self.dir.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.rightclick)
 		self.refreshfiles()
 		
 		self.Centre() 
@@ -757,13 +762,16 @@ class MyFrame(wx.Frame):
 		
 		self.dir.addRootFolder(path)
 	
-	def importfile(self, event):
-		subprocess.Popen(["importfile"], cwd=self.dir.GetPath().path)
+	def importfile(self, event=None, where=None):
+		if where == None:
+			where = self.getpath()
+		subprocess.Popen(["importfile"], cwd=where.path)
 	
 	def exportfile(self, event=None, items=None):
 		if items == None:
 			items = GetSelectedItems(self.lc1)
-		files = [self.getitempath(item) for item in items]
+			items = [self.getitempath(item) for item in items]
+		files = items
 		print files
 		for thefile in files:
 			subprocess.Popen(["exportfile", thefile.path], cwd=self.dir.GetPath().path)
@@ -808,8 +816,11 @@ class MyFrame(wx.Frame):
 	def getitempath(self, item):
 		return self.getpath(item.GetText())
 		
-	def getpath(self, name):
-		return self.dir.GetPath().join(name)
+	def getpath(self, name=None):
+		if name == None:
+			return self.dir.GetPath()
+		else:
+			return self.dir.GetPath().join(name)
 #		return self.dir.GetPath() + "/" + name
 	
 	def clickitem(self, event=None, item=None):
@@ -823,28 +834,31 @@ class MyFrame(wx.Frame):
 #			self.openitem(item)
 	
 	def openitem(self, item=None):
-		path = self.getitempath(item)
-		subprocess.Popen(["xdg-open", path.path], cwd=self.dir.GetPath().path)
+		subprocess.Popen(["xdg-open", item.path], cwd=self.getpath().path)
 	
 	def openitems(self, event=None, items=None):
 		if items == None:
-			items = [event.GetItem()]
+			items = [self.getitempath(event.GetItem())]
 		for item in items:
 			self.openitem(item)
 		
-	def newfolder(self, event=None):
+	def newfolder(self, event=None, where=None):
+		if where == None:
+			where = self.getpath()
 		test = wx.TextEntryDialog(None, "New folder name:", "New Folder")
 		if test.ShowModal() == wx.ID_OK:
 			foldername = test.GetValue()
-			folderpath = self.getpath(foldername)
+			folderpath = where.join(foldername)
 			folderpath.mkdir()#os.mkdir(folderpath)
 			self.refreshfiles()
 	
-	def newfile(self, event=None):
+	def newfile(self, event=None, where=None):
+		if where == None:
+			where = self.getpath()
 		test = wx.TextEntryDialog(None, "New file name:", "New File")
 		if test.ShowModal() == wx.ID_OK:
 			filename = test.GetValue()
-			filepath = self.getpath(filename)
+			filepath = where.join(filename)
 			filepath.create()
 			self.refreshfiles()
 			
@@ -853,8 +867,7 @@ class MyFrame(wx.Frame):
 		wx.NO_DEFAULT, self)
 		if ret == wx.YES:
 			for item in items:
-				path = self.getitempath(item)
-				self.deletepath(path)
+				self.deletepath(item)
 			self.refreshfiles()
 		
 	def deletepath(self, path):
@@ -867,17 +880,20 @@ class MyFrame(wx.Frame):
 	def cutitems(self, event=None, items=None):
 		global clipboard, cut
 		cut = True
-		clipboard = [self.getitempath(item) for item in items]
+		clipboard = items
 		
 	def copyitems(self, event=None, items=None):
 		global clipboard, cut
 		cut = False
-		clipboard = [self.getitempath(item) for item in items]
+		clipboard = items
 		
-	def paste(self, event=None):
+	def paste(self, event=None, where=None):
+		if where == None:
+			where = self.getpath()
 		global clipboard, cut
+		print "pasting", clipboard, "into", where
 		loadDlg = PopupDialog(self, ("Working..."), ("Working.\nPlease wait...."))
-		newdir = self.dir.GetPath()
+		newdir = where
 		for path in clipboard:
 			if path.dirname() == newdir:
 				basename = path.basename().split(".", 1)
@@ -893,7 +909,7 @@ class MyFrame(wx.Frame):
 		loadDlg.Destroy()
 		
 	def renamefile(self, event=None, item=None):
-		path = self.getitempath(item)
+		path = item
 		name = path.basename()#os.path.basename(path)
 		test = wx.TextEntryDialog(None, "New file name:", "New File", name)
 		if test.ShowModal() == wx.ID_OK:
@@ -908,17 +924,17 @@ class MyFrame(wx.Frame):
 		test = wx.TextEntryDialog(None, "Archive file name:", "Compress Files")
 		if test.ShowModal() == wx.ID_OK:
 			newname = test.GetValue()
-			process = subprocess.Popen(["zip", newname] + [self.getitempath(item).basename() for item in items], cwd=self.dir.GetPath().path)
+			process = subprocess.Popen(["zip", newname] + [item.basename() for item in items], cwd=self.getpath().path)
 			process.wait()
 			self.refreshfiles()
 		
 	def extract(self, event=None, item=None):
-		itempath = self.getitempath(item).path
+		itempath = item.path
 		command = None
 		for ending, prg in self.extractors:
 			if itempath.endswith(ending):
 				command = prg
-		process = subprocess.Popen(command.split(" ") + [itempath], cwd=self.dir.GetPath().path)
+		process = subprocess.Popen(command.split(" ") + [itempath], cwd=self.getpath().path)
 		process.wait()
 		self.refreshfiles()
 	
@@ -930,41 +946,59 @@ class MyFrame(wx.Frame):
 #			self.mainsplitter.Unsplit()
 		
 	def rightclick(self, event):
-		itemclicked = event.GetItem()
-		if itemclicked != None:
-			itemclickedpath = self.getitempath(itemclicked)
-		itemsselected = GetSelectedItems(self.lc1)
+		eventsource = event.GetEventObject()
+		if eventsource == self.lc1:
+			hasitem = event.GetIndex() != -1
+			itemclicked = event.GetItem()
+			if hasitem:
+				itemclickedpath = self.getitempath(itemclicked)
+			else:
+				itemclickedpath = self.getpath()
+			itemsselected = [self.getitempath(item) for item in GetSelectedItems(self.lc1)]
+		elif eventsource == self.dir:
+			hasitem = True
+			itemclicked = event.GetItem()
+			itemclickedpath = self.getpath()
+			itemsselected = [itemclickedpath]
 		
-		canedit = all([self.getitempath(item).canedit() for item in itemsselected])
+		canedit = all([item.canedit() for item in itemsselected])
 		
-		if event.GetIndex() == -1:
-			items = []
+		items = []
+		if itemclickedpath.dir:
 			if canedit:
 				items += [
-				("New folder", self.newfolder), 
-				("New file", self.newfile),
-				None,
-				("Paste", self.paste)]
-				if self.dir.GetPath().canimport():
-					items += [None, ("Import File", self.importfile)]
-		else:
-			items = []
+					("New folder", functools.partial(self.newfolder, where=itemclickedpath)),
+					("New file", functools.partial(self.newfile, where=itemclickedpath)),
+					None,
+					("Paste", functools.partial(self.paste, where=itemclickedpath))]
+				if itemclickedpath:
+					items += [None, ("Import File", functools.partial(self.importfile, where=itemclickedpath))]
+				if hasitem:
+					items += [None]
+		if hasitem:
 			if canedit:
-				items += [("View File", functools.partial(self.openitems, items=itemsselected)), 
-				None,
-				("Cut", functools.partial(self.cutitems, items=itemsselected))]
-			items += [("Copy", functools.partial(self.copyitems, items=itemsselected))]
-			if all([self.getitempath(item).candownload() for item in itemsselected]):
-				items += [None, 
-				("Download", functools.partial(self.exportfile, items=itemsselected))]
+				items += [
+					("View File", functools.partial(self.openitems, items=[itemclickedpath]))]
+				items += [
+					None,
+					("Cut", functools.partial(self.cutitems, items=itemsselected))]
+			items += [
+				("Copy", functools.partial(self.copyitems, items=itemsselected))]
+			if all([item.candownload() for item in itemsselected]):
+				items += [
+					None, 
+					("Download", functools.partial(self.exportfile, items=itemsselected))]
 			if canedit:
-				items += [None, 
-					("Rename", functools.partial(self.renamefile, item=itemclicked)),
+				items += [
+					None, 
+					("Rename", functools.partial(self.renamefile, item=itemclickedpath)),
 					None]
-				if all([self.getitempath(item).cancompress() for item in itemsselected]):
-					items += [("Compress", functools.partial(self.compress, items=itemsselected))]
+				if all([item.cancompress() for item in itemsselected]):
+					items += [
+						("Compress", functools.partial(self.compress, items=itemsselected))]
 				if itemclickedpath.canextract(self.extractors):
-					items += [("Extract Here", functools.partial(self.extract, item=itemclicked))]
+					items += [
+						("Extract Here", functools.partial(self.extract, item=itemclickedpath))]
 				items += [None, 
 					("Delete", functools.partial(self.deleteitems, items=itemsselected))]
 		
@@ -978,7 +1012,7 @@ class MyFrame(wx.Frame):
 					menuitem = menu.Append(-1, label)
 					self.Bind(wx.EVT_MENU, funct, menuitem)
 			
-			self.lc1.PopupMenu(menu, event.GetPoint())
+			eventsource.PopupMenu(menu, event.GetPoint())
 			menu.Destroy()
 	
 	def newwindow(self, event=None):
