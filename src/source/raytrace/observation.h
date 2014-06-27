@@ -212,6 +212,7 @@ class Observation {
     std::string devtype;
     std::vector<int> feaflag;
     std::vector<std::string> feafile;
+    int untarSEDs;
 
 
     /* should be part of image but have conflict with settings.c */

@@ -85,6 +85,19 @@ int Observation::addSource (const std::string & object, int sourcetype) {
     sources.norm[nsource] = pow(10.0, ((mag + magnification + 48.6)/(-2.5)));
     sources.mag[nsource] = mag + magnification;
 
+    // untar SEDs if needed
+    if (flatdir == 1 && untarSEDs==0) {
+        std::ostringstream tarName;
+        tarName << "SEDs_" << obshistid << "_" << chipid << ".tar";
+        std::ifstream tarFile(tarName.str().c_str());
+        if (tarFile.good()) {
+            std::cout<<"Untarring "<<tarName.str()<<std::endl;
+            std::string tarCommand = "tar xf " + tarName.str();
+            system(tarCommand.c_str());
+        }
+        untarSEDs=1;
+    }
+
     oldsed = 0;
     // read SED file
     if (nsource > 0) {
@@ -1000,6 +1013,7 @@ int Observation::parser () {
     miescatter_scat = 0.135;
     totalseeing = 0.67;
     flatdir = 0;
+    untarSEDs = 0;
     atmdebug = 0;
     large_scale = 1.0;
     coarse_scale = 1.0;
@@ -1362,13 +1376,6 @@ int Observation::parser () {
         instrdir  =  ".";
         bindir  =  ".";
         imagedir = ".";
-        std::ostringstream tarName;
-        tarName << "SEDs_" << obshistid << "_" << chipid << ".tar";
-        std::ifstream tarFile(tarName.str().c_str());
-        if (tarFile.good()) {
-            std::string tarCommand = "tar xf " + tarName.str();
-            system(tarCommand.c_str());
-        }
     }
 
     focalplanefile = instrdir + "/focalplanelayout.txt";
