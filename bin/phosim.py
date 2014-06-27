@@ -429,7 +429,7 @@ class PhosimFocalplane(object):
                               condor.writeTrimDag(self,jobName,tc,nexp)
                          elif self.grid == 'diagrid':
                               nexp=self.nsnap if devtype[i]=='CCD' else int(self.vistime/devvalue[i])
-                              #trimJobID[tc]=diagrid.writeTrimDag(self,jobName,tc,nexp)
+                              trimJobID[tc]=diagrid.writeTrimDag(self,jobName,tc,nexp)
                          else:
                               sys.stderr.write('Unknown grid type: %s' % self.grid)
                               sys.exit(-1)

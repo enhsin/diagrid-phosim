@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os, subprocess, shutil
+import tarfile
 
 def runProgram(command, binDir=None, argstring=None):
     myCommand = command
@@ -15,9 +16,11 @@ def posttrim(argv):
     obsid=argv[2]
     tc=argv[3]
     nexp=int(float(argv[4]))
-    dataDir=argv[5] 
-    checkpoint=int(float(argv[7]))
+    sedDir=argv[5]
+    checkpoint=int(float(argv[6]))
+    workDir=os.path.join(os.getcwd(),'../scratch')
 
+    os.chdir(workDir)
     chipID=[]
     for line in open('trim_'+obsid+'_'+tc+'.pars'):
         if "chipid" in line:
@@ -30,28 +33,23 @@ def posttrim(argv):
                 if "SED" in line or "sky" in line:
                    seds.append(line.split()[5])
             uniqseds=list(set(seds))
+            if len(seds)>0:
+                tar = tarfile.open('SEDs_'+obsid+'_'+cid+'.tar', "w")
+                for s in uniqseds:
+                    fileName=os.path.join(sedDir,s)
+                    tar.add(fileName,fileName.split("/")[-1]) #create a flat list
+                tar.close()
             for ex in range(nexp):
                 eid="E%03d" % (ex)
                 fid=obsid+'_'+cid+'_'+eid
                 for ckpt in range(checkpoint+1):
                     fidckpt=fid+'_'+str(ckpt)
-                    if os.path.exists('raytrace_'+fidckpt+'.submit'): 
-                        submitfile=open('raytrace_'+fidckpt+'.submit','a')  
-                        if len(seds)>0: 
-                            submitfile.write(',\ \n')   
-                            for s in uniqseds:
-                                if s==uniqseds[-1]:
-                                    submitfile.write('%s/SEDs/%s \n' % (dataDir,s))    
-                                else:
-                                    submitfile.write('%s/SEDs/%s, \ \n' % (dataDir,s))    
+                    if os.path.exists('raytrace_'+fidckpt+'.pars'):
+                        if len(seds)>0:
                             pfile=open('raytrace_'+fidckpt+'.pars','a')
                             pfile.write(open('trimcatalog_'+obsid+'_'+cid+'.pars').read())
                             pfile.close()
-                        else:
-                            submitfile.write('\n')   
-                        submitfile.write('Queue 1\n') 
-                        submitfile.close()  
-            os.remove('trimcatalog_'+obsid+'_'+cid+'.pars')              
+      
  
 
 def postraytrace(argv):
@@ -60,10 +58,10 @@ def postraytrace(argv):
     cid=argv[4]
     eid=argv[5]
     outputDir=argv[6]
-    workDir=argv[7]
+    workDir=os.path.join(os.getcwd(),'../scratch')
 
-    eImage=workDir+'/lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz' 
-    eImageRename=outputDir+'/lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz'
+    eImage=os.path.join(workDir,'lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz')
+    eImageRename=os.path.join(outputDir,'lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz')
     if os.path.exists(eImage):
         shutil.move(eImage,eImageRename)
  
@@ -75,7 +73,7 @@ def poste2adc(argv):
     eid=argv[5]
     outputDir=argv[6]
     instrDir=argv[7]
-    workDir=argv[8]
+    workDir=os.path.join(os.getcwd(),'../scratch')
 
     os.chdir(workDir)
     tarFiles=''
@@ -89,7 +87,7 @@ def poste2adc(argv):
             tarFiles+=rawImageRename.split('/')[-1]+' '
 
     eImage='lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz'
-    eImageRename=outputDir+'/lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz'
+    eImageRename=os.path.join(outputDir,'lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz')
     shutil.move(eImage,eImageRename)
     tarFiles+=(eImageRename.split('/')[-1])
 
