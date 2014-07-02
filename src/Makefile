@@ -32,4 +32,5 @@ distclean: clean
 	rm -f ../bin/instrument
 	rm -f ../bin/atmosphere
 	rm -f ../bin/unittest
+	rm -rf ../bin/*
 
