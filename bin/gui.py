@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
 from Tkinter import *
+import ttk
+
 import filebrowser
 import time
 import functools
 import subprocess
 import module_locator
 import os
+from collections import OrderedDict
 
 workspacedir = os.path.join(os.environ['HOME'], "phosimrun")#"/home/yyon/Workspace/phosimrun"
 if not os.path.exists(workspacedir):
@@ -23,6 +26,7 @@ imagedir = os.path.join(datadir, "images")
 phosimpy = os.path.join(bindir, "phosim.py")
 outputdir = os.path.join(currentdir, "output")
 workdir = os.path.join(currentdir, "work")
+calibrationfolders = [os.path.join(exampledir, "biases"), os.path.join(exampledir, "darks"), os.path.join(exampledir, "flats")]
 if not os.path.exists(outputdir):
 	os.mkdir(outputdir)
 if not os.path.exists(workdir):
@@ -67,7 +71,7 @@ def runphosimpy(instancecatalog, extracommands, e2adcflag):
 	
 	result = subprocess.Popen(command, stdout=log, stderr=log)
 
-def run():
+def runuser():
 	runphosimpy(instancecatalog=options[INSTANCECATALOG], extracommands=options[EXTRACOMMANDS], e2adcflag=options[E2ADC])
 
 #runphosimpy("","",1)
@@ -78,31 +82,60 @@ root.wm_title("Phosim")
 workspacebutton = Button(root, text="Open Folders", command=launchworkspace)
 workspacebutton.grid(row=0, column=0)
 
-instancecataloglabel = Label(root, text="Instance Catalog:")
-instancecataloglabel.grid(row=1, column=0, sticky=W)
+notebook = ttk.Notebook(root)
 
-instancecatalogdisplay = Label(root, text="[no file selected]")
-instancecatalogdisplay.grid(row=1, column=1, sticky=W)
+userframe = Frame(notebook)
 
-instancecatalogbutton = Button(root, text="[...]", command=functools.partial(launchopen, INSTANCECATALOG, instancecatalogdisplay))
-instancecatalogbutton.grid(row=1, column=2)
+instancecataloglabel = Label(userframe, text="Instance Catalog:")
+instancecataloglabel.grid(row=0, column=0, sticky=W)
 
-extracommandslabel = Label(root, text="Physics Override Commands:")
-extracommandslabel.grid(row=2, column=0, sticky=W)
+instancecatalogdisplay = Label(userframe, text="[no file selected]")
+instancecatalogdisplay.grid(row=0, column=1, sticky=W)
 
-extracommandsdisplay = Label(root, text="[no file selected]")
-extracommandsdisplay.grid(row=2, column=1, sticky=W)
+instancecatalogbutton = Button(userframe, text="[...]", command=functools.partial(launchopen, INSTANCECATALOG, instancecatalogdisplay))
+instancecatalogbutton.grid(row=0, column=2)
 
-extracommandsbutton = Button(root, text="[...]", command=functools.partial(launchopen, EXTRACOMMANDS, extracommandsdisplay))
-extracommandsbutton.grid(row=2, column=2)
+extracommandslabel = Label(userframe, text="Physics Override Commands:")
+extracommandslabel.grid(row=1, column=0, sticky=W)
+
+extracommandsdisplay = Label(userframe, text="[no file selected]")
+extracommandsdisplay.grid(row=1, column=1, sticky=W)
+
+extracommandsbutton = Button(userframe, text="[...]", command=functools.partial(launchopen, EXTRACOMMANDS, extracommandsdisplay))
+extracommandsbutton.grid(row=1, column=2)
 
 e2adcvar = IntVar()
 
-e2adccheckbox = Checkbutton(root, text="Run e2adc", command=updatee2adc, variable=e2adcvar)
-e2adccheckbox.grid(row=3, column=0, columnspan=2, sticky=W)
+e2adccheckbox = Checkbutton(userframe, text="Run e2adc", command=updatee2adc, variable=e2adcvar)
+e2adccheckbox.grid(row=2, column=0, columnspan=2, sticky=W)
 
-outputbutton = Button(root, text="Run Simulation", command=run)
-outputbutton.grid(row=4, column=0)
+outputbutton = Button(userframe, text="Run Simulation", command=runuser)
+outputbutton.grid(row=3, column=0)
+
+notebook.add(userframe, text="user")
+
+calibrationframe = Frame(notebook)
+
+calibrationinstancecatalogs = OrderedDict()
+for calibrationfolder in calibrationfolders:
+	for instancecatalog in os.listdir(calibrationfolder):
+		if instancecatalog.endswith("_instcat_0"):
+			calibrationinstancecatalogs[instancecatalog.replace("_instcat_0", "")] = os.path.join(calibrationfolder, instancecatalog)
+#calibrationinstancecatalogs["all"]
+
+calibrationinstancecataloglabel = Label(calibrationframe, text="data: ")
+calibrationinstancecataloglabel.grid(row=0, column=0)
+
+calibrationinstancecatalog = StringVar()
+calibrationinstancecatalog.set(calibrationinstancecatalogs.keys()[0])
+calibrationinstancecatalogmenu = OptionMenu(calibrationframe, calibrationinstancecatalog, *calibrationinstancecatalogs)
+calibrationinstancecatalogmenu.grid(row=0, column=1)
+
+
+
+notebook.add(calibrationframe, text="calibration")
+
+notebook.grid(row=1, column=0)
 
 mainloop()
 
