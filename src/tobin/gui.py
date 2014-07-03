@@ -179,9 +179,10 @@ vscriptlabel.grid(row=0, column=0, sticky=W)
 vscriptfiles = sorted(os.listdir(validationscriptsdir))
 vscripts = OrderedDict()
 for f in vscriptfiles:
-	vscriptname = f.replace(".sh", "")
-	vscriptname = ' & '.join(a+b for a,b in zip(vscriptname[::2], vscriptname[1::2]))
-	vscripts[vscriptname] = os.path.join(validationscriptsdir, f)
+	if not f.startswith("."):
+		vscriptname = f.replace(".sh", "")
+		vscriptname = ' & '.join(a+b for a,b in zip(vscriptname[::2], vscriptname[1::2]))
+		vscripts[vscriptname] = os.path.join(validationscriptsdir, f)
 vscript = StringVar()
 vscript.set(vscripts.keys()[0])
 vscriptmenu = OptionMenu(validationframe, vscript, *vscripts)
