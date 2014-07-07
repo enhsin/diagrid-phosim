@@ -54,7 +54,7 @@ def launchworkspace():
 	browserapp.threadwindow(basefolder=[workspacedir, outputdir], basefoldername=["Workspace", "Output"], basefoldermakedirs=True, openmode=False)
 
 def launchopen(optionsindex, label):
-	browserapp.threadwindow(basefolder=[workspacedir, exampledir], basefoldername=["Workspace", "Examples"], basefoldermakedirs=True, openmode=True, openmethod=functools.partial(openmethod, optionsindex=optionsindex, label=label))
+	browserapp.threadwindow(basefolder=[workspacedir, exampledir, validationdir, phosimdir], basefoldername=["Workspace", "Examples", "Validation", "Phosim"], basefoldermakedirs=True, openmode=True, openmethod=functools.partial(openmethod, optionsindex=optionsindex, label=label))
 
 def updatee2adc():
 	options[E2ADC] = str(e2adcvar.get())
