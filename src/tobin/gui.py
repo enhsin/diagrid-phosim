@@ -43,6 +43,8 @@ EXTRACOMMANDS = "extracommands"
 E2ADC = "e2adc"
 options = {INSTANCECATALOG:"", EXTRACOMMANDS:"", E2ADC:"0"}
 
+log = open("output.log", "w")
+
 def openmethod(paths, optionsindex=None, label=None):
 	if len(paths) != 0:
 		path = paths[0]
@@ -63,10 +65,10 @@ def phosimpyothercommands():
 	return ["-o", outputdir, "-w", workdir, "-b", bindir, 
 		"-d", datadir, "--sed="+seddir, "--image="+imagedir]
 
-def runphosimpy(instancecatalog, extracommands, e2adcflag, log):
+def runphosimpy(instancecatalog, extracommands, e2adcflag, log, grid="no", ckpt=0):
 	
 	command = ["xterm", "-hold", "-title", "phosimrun", "-e", "python", phosimpy, instancecatalog, "-c", extracommands, 
-		"-e", e2adcflag] + phosimpyothercommands()
+		"-e", e2adcflag, "-g", grid, "--checkpoint="+str(ckpt)] + phosimpyothercommands()
 	
 	print command
 	
@@ -85,8 +87,11 @@ def runcalibration():
 	for cat in cats:
 		commands += cat[:sets]
 	
-	for cat in command:
-		runphosimpy(instancecatalog=cat, extracommands="none", e2adcflag="1", log=log)
+	for cat in commands:
+		if "flat" in cat:
+			runphosimpy(instancecatalog=cat, extracommands="none", e2adcflag="1", log=log, grid="diagrid", ckpt=54)
+		else:
+			runphosimpy(instancecatalog=cat, extracommands="none", e2adcflag="1", log=log, grid="diagrid", ckpt=0)
 
 def runvalidation():
 	script = vscripts[vscript.get()]

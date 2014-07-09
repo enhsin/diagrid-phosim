@@ -27,30 +27,31 @@ def posttrim(argv):
             chipID.append(line.split()[2])
 
     for cid in chipID:
-        if os.path.getsize('trimcatalog_'+obsid+'_'+cid+'.pars')>0:
-            seds=[]
-            for line in open('trimcatalog_'+obsid+'_'+cid+'.pars'):
-                if "SED" in line or "sky" in line:
-                   seds.append(line.split()[5])
-            uniqseds=list(set(seds))
-            if len(seds)>0:
-                tar = tarfile.open('SEDs_'+obsid+'_'+cid+'.tar', "w")
-                for s in uniqseds:
-                    fileName=os.path.join(sedDir,s)
-                    tar.add(fileName,fileName.split("/")[-1]) #create a flat list
-                tar.close()
-            for ex in range(nexp):
-                eid="E%03d" % (ex)
-                fid=obsid+'_'+cid+'_'+eid
-                for ckpt in range(checkpoint+1):
-                    fidckpt=fid+'_'+str(ckpt)
-                    if os.path.exists('raytrace_'+fidckpt+'.pars'):
-                        if len(seds)>0:
-                            pfile=open('raytrace_'+fidckpt+'.pars','a')
-                            pfile.write(open('trimcatalog_'+obsid+'_'+cid+'.pars').read())
-                            pfile.close()
-      
- 
+        if os.path.exists('trimcatalog_'+obsid+'_'+cid+'.pars'):
+            if os.path.getsize('trimcatalog_'+obsid+'_'+cid+'.pars')>0:
+                seds=[]
+                for line in open('trimcatalog_'+obsid+'_'+cid+'.pars'):
+                    if "SED" in line or "sky" in line:
+                       seds.append(line.split()[5])
+                uniqseds=list(set(seds))
+                if len(seds)>0:
+                    tar = tarfile.open('SEDs_'+obsid+'_'+cid+'.tar', "w")
+                    for s in uniqseds:
+                        fileName=os.path.join(sedDir,s)
+                        tar.add(fileName,fileName.split("/")[-1]) #create a flat list
+                    tar.close()
+                for ex in range(nexp):
+                    eid="E%03d" % (ex)
+                    fid=obsid+'_'+cid+'_'+eid
+                    for ckpt in range(checkpoint+1):
+                        fidckpt=fid+'_'+str(ckpt)
+                        if os.path.exists('raytrace_'+fidckpt+'.pars'):
+                            if len(seds)>0:
+                                pfile=open('raytrace_'+fidckpt+'.pars','a')
+                                pfile.write(open('trimcatalog_'+obsid+'_'+cid+'.pars').read())
+                                pfile.close()
+        else:
+            sys.exit(1)
 
 def postraytrace(argv):
     observationID=argv[2]
@@ -64,8 +65,9 @@ def postraytrace(argv):
     eImageRename=os.path.join(outputDir,'lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz')
     if os.path.exists(eImage):
         shutil.move(eImage,eImageRename)
- 
- 
+    else:
+        sys.exit(1)
+
 def poste2adc(argv):
     observationID=argv[2]
     filt=argv[3]
@@ -83,8 +85,11 @@ def poste2adc(argv):
         if cid in line and aid != cid:
             rawImage='lsst_a_'+observationID+'_'+aid+'_'+eid+'.fits.gz'
             rawImageRename=outputDir+'/lsst_a_'+observationID+'_f'+filt+'_'+aid+'_'+eid+'.fits.gz'
-            shutil.move(rawImage,rawImageRename)
-            tarFiles+=rawImageRename.split('/')[-1]+' '
+            if os.path.exists(rawImage):
+                shutil.move(rawImage,rawImageRename)
+                tarFiles+=rawImageRename.split('/')[-1]+' '
+            else:
+                sys.exit(1)
 
     eImage='lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz'
     eImageRename=os.path.join(outputDir,'lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz')

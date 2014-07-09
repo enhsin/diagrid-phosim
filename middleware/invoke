@@ -1,3 +1,3 @@
 #!/bin/sh
 
-/usr/bin/invoke_app "$@" -t phosim -w captive -C "@tool/bin/gui.py"
+/usr/bin/invoke_app "$@" -t phosim -u pegasus-4.3.2 -w captive -C "@tool/bin/gui.py"

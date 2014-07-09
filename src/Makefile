@@ -14,7 +14,7 @@ install: all
 	install -D source/instrument/instrument ../bin/
 	install -D source/atmosphere/atmosphere ../bin/
 	install -D validation/unittest ../bin/
-	cp -R tobin/* ../bin/
+	rsync -av --exclude=.svn tobin/* ../bin/
 
 clean:
 	rm -f source/raytrace/*.o

@@ -58,10 +58,12 @@ def initEnvironment(self):
 
     e_raytrace = Executable(namespace="phosim", name="raytrace", os="linux", arch="x86_64", installed=False)
     e_raytrace.addPFN(PFN("file://" + os.path.join(self.binDir,'raytrace'), "condorpool"))
+    e_raytrace.addProfile(Profile(namespace="condor", key="requirements", value='TARGET.ClusterName == "Hansen"'))
     self.dax.addExecutable(e_raytrace)
 
     e_e2adc = Executable(namespace="phosim", name="e2adc", os="linux", arch="x86_64", installed=False)
     e_e2adc.addPFN(PFN("file://" + os.path.join(self.binDir,'e2adc'), "condorpool"))
+    e_e2adc.addProfile(Profile(namespace="condor", key="requirements", value='TARGET.ClusterName == "Hansen"'))
     self.dax.addExecutable(e_e2adc)
 
 def writeTrimDag(self,jobName,tc,nexp):
@@ -85,8 +87,8 @@ def writeTrimDag(self,jobName,tc,nexp):
     for line in open(jobName+'.pars'):
         if "chipid" in line:
             cid=line.split()[2]
-            trim.uses( File('trimcatalog_'+self.observationID+'_'+cid+'.pars'), link=Link.OUTPUT) 
-    
+            trim.uses( File('trimcatalog_'+self.observationID+'_'+cid+'.pars'), link=Link.OUTPUT, transfer=False, register=False)
+
     trim.addProfile(Profile(namespace="dagman", key="POST", value="posttrim"))
     trim.addProfile(Profile(namespace="dagman", key="POST.PATH.posttrim", value=os.path.join(self.binDir,"diagrid","chip")))
     arg='posttrim %s %d %d %s %d' % (self.observationID,tc,nexp,self.sedDir,checkpoint)
@@ -147,8 +149,10 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
             eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp.fits"), link=Link.INPUT)')
         if ckpt==checkpoint:
             fileName=instrument+'_e_'+fid+'.fits.gz'
-            eval('raytrace'+str(ckpt)+'.uses(File(fileName), link=Link.OUTPUT)')
-            if not run_e2adc:
+            if run_e2adc:
+                eval('raytrace'+str(ckpt)+'.uses(File(fileName), link=Link.OUTPUT, transfer=False, register=False)')
+            else:
+                eval('raytrace'+str(ckpt)+'.uses(File(fileName), link=Link.OUTPUT)')
                 eval('raytrace'+str(ckpt)+'.addProfile(Profile(namespace="dagman", key="POST", value="postraytrace"))')
                 eval('raytrace'+str(ckpt)+'.addProfile(Profile(namespace="dagman", key="POST.PATH.postraytrace", value=os.path.join(self.binDir,"diagrid","chip")))')
                 arg='postraytrace %s %s %s %s %s' % (observationID,self.filt,cid,eid,self.outputDir)
@@ -158,7 +162,7 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
 
         if ckpt==0:
             trim=self.dax.getJob(self.trimJobID[tc])
-            eval('self.dax.depends(parent=trim,child=raytrace'+str(ckpt)+')') 
+            eval('self.dax.depends(parent=trim,child=raytrace'+str(ckpt)+')')
         else:
             eval('self.dax.depends(parent=raytrace'+str(ckpt-1)+',child=raytrace'+str(ckpt)+')')
             if ckpt>1:
@@ -185,7 +189,7 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
             aid=line.split()[0]
             if cid in line and aid != cid:
                 e2adc.uses(File(instrument+'_a_'+observationID+'_'+aid+'_'+eid+'.fits.gz'), link=Link.OUTPUT)
-        fileName=instrument+'_'+observationID+'_f'+self.filt+'_'+cid+'_'+eid+'.tar'
+        #fileName=instrument+'_'+observationID+'_f'+self.filt+'_'+cid+'_'+eid+'.tar'
         e2adc.addProfile(Profile(namespace="dagman", key="POST", value="poste2adc"))
         e2adc.addProfile(Profile(namespace="dagman", key="POST.PATH.poste2adc", value=os.path.join(self.binDir,"diagrid","chip")))
         arg='poste2adc %s %s %s %s %s %s' % (observationID,self.filt,cid,eid,self.outputDir,self.instrDir)
