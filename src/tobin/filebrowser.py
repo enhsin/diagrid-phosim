@@ -50,7 +50,7 @@ cut = False
 
 class PopupDialog(wx.Dialog):
     """ A popup dialog for temporary user messages """
-
+	
     def __init__(self, parent, title, msg):
         # Create a dialog
         wx.Dialog.__init__(self, parent, -1, title, size=(350, 150), style=wx.CAPTION | wx.STAY_ON_TOP)
@@ -119,7 +119,7 @@ class LocalPath(object):
 		if newpath.remote:
 			newpath.copyfrom(self)
 		else:
-			newpath = newpath.join(self.basename())
+#			newpath = newpath.join(self.basename())
 			if self.file:
 				shutil.copy(self.path, newpath.path)
 			elif self.dir:
@@ -199,6 +199,13 @@ class LocalPath(object):
 		
 	def makedirs(self):
 		os.makedirs(self.path)
+		
+	def getsize(self):
+		num = os.path.getsize(self.path)
+		for x in ['bytes','KB','MB','GB','TB']:
+			if num < 1024.0:
+				return "%3.1f %s" % (num, x)
+			num /= 1024.0
 
 class RemotePath(LocalPath):
 	def __init__(self, sftp, path, servername):
@@ -239,7 +246,7 @@ class RemotePath(LocalPath):
 #			newpath.sftp.putfo(fo, newpath.path)
 #			fo.close()
 		else:
-			newpath = newpath.join(self.basename())
+#			newpath = newpath.join(self.basename())
 			if self.dir:
 				newpath.mkdir()
 				for content in self.listdir():
@@ -290,6 +297,9 @@ class RemotePath(LocalPath):
 		
 	def canedit(self):
 		return False
+		
+	def getsize(self):
+		return "Unknown"
 
 class FileTree(wx.TreeCtrl):
 	def __init__(self, parent, id=-1, pos=wx.DefaultPosition,
@@ -412,6 +422,8 @@ class FileTree(wx.TreeCtrl):
 		parents = path.getparents()
 		parents.reverse()
 		if pathroot in parents:
+			self.Expand(self.getitem(pathroot))
+			
 			rootindex = parents.index(pathroot)
 			parents = parents[rootindex+1:]
 			
@@ -456,13 +468,13 @@ class MyFrame(wx.Frame):
 		(".Z", "uncompress"), 
 		(".7z", "7z x")]
 	
-	def __init__(self, parent, id, title, basefolder=None, basefoldername=None, basefoldermakedirs=False, openmode=False, openmethod=None):
+	def __init__(self, parent, id, title, basefolder=None, basefoldername=None, basefoldermakedirs=False, openmode=False, openmethod=None, showotherfolders=True, copyinto=False):
 		wx.Frame.__init__(self, parent, id, title, wx.DefaultPosition, wx.Size(800, 500))
 		
 		# menu bar
 		menubar = wx.MenuBar()
 		fileMenu = wx.Menu()
-#		toolsMenu = wx.Menu()
+		importMenu = wx.Menu()
 		
 		newwinitem = fileMenu.Append(-1, 'New Window')
 		self.Bind(wx.EVT_MENU, self.newwindow, newwinitem)
@@ -470,10 +482,10 @@ class MyFrame(wx.Frame):
 		refreshitem = fileMenu.Append(-1, 'Refresh')
 		self.Bind(wx.EVT_MENU, self.refreshfiles, refreshitem)
 		
-		sshitem = fileMenu.Append(-1, 'Connect to SSH Server')
+		sshitem = importMenu.Append(-1, 'Connect to SSH Server')
 		self.Bind(wx.EVT_MENU, self.sshconnect, sshitem)
 		
-		importitem = fileMenu.Append(-1, 'Import File')
+		importitem = importMenu.Append(-1, 'Import from Local Computer')
 		self.Bind(wx.EVT_MENU, self.importfile, importitem)
 		
 #		importitem = fileMenu.Append(-1, 'Import Files')
@@ -486,7 +498,7 @@ class MyFrame(wx.Frame):
 #		self.Bind(wx.EVT_MENU, self.showsubmitwindow, submititem)
 		
 		menubar.Append(fileMenu, '&File')
-#		menubar.Append(toolsMenu, '&Tools')
+		menubar.Append(importMenu, '&Import')
 		self.SetMenuBar(menubar)
 		
 		# main splitters
@@ -499,7 +511,7 @@ class MyFrame(wx.Frame):
 		
 		tb = self.CreateToolBar( wx.TB_HORIZONTAL
                                  | wx.NO_BORDER
-                                 | wx.TB_FLAT
+                                 | wx.TB_FLAT 
                                  | wx.TB_TEXT
                                  )
 		backtoolbaritem = tb.AddSimpleTool(-1, wx.ArtProvider.GetBitmap(wx.ART_GO_BACK))
@@ -535,6 +547,7 @@ class MyFrame(wx.Frame):
 		
 		hasbasefolder = not (basefolder == None) and not (basefolder == [])
 		select = True
+		self.copyintofolder = None
 		if hasbasefolder:
 			if not isinstance(basefolder, list):
 				basefolder = [basefolder]
@@ -548,10 +561,14 @@ class MyFrame(wx.Frame):
 				if folder.exists():
 					self.dir.addRootFolder(folder, name=name, select=select)
 					select = False
-		self.dir.addRootFolder(LocalPath(os.environ['HOME']), expand=not hasbasefolder, select=not hasbasefolder)
-		sdatadir = LocalPath("/home/sdata/" + os.environ['USER'])
-		if sdatadir.exists():
-			self.dir.addRootFolder(sdatadir, select=False, expand=False)
+				if copyinto:
+					if self.copyintofolder == None:
+						self.copyintofolder = folder
+		if showotherfolders:
+			self.dir.addRootFolder(LocalPath(os.environ['HOME']), expand=not hasbasefolder, select=not hasbasefolder)
+			sdatadir = LocalPath("/home/sdata/" + os.environ['USER'])
+			if sdatadir.exists():
+				self.dir.addRootFolder(sdatadir, select=False, expand=False)
 		
 		imgsize = 16
 		imglist = wx.ImageList(imgsize,imgsize)
@@ -578,6 +595,21 @@ class MyFrame(wx.Frame):
 	def openfiles(self, event=None):
 		itemsselected = GetSelectedItems(self.lc1)
 		paths = [self.getitempath(item) for item in itemsselected]
+		
+		if self.copyintofolder != None:
+			if any([not path.ischild(self.copyintofolder) for path in paths]):
+				dlg = wx.MessageDialog(self, "Do you want to copy these files into the workspace directory?", "Copy files?", wx.YES_NO | wx.ICON_QUESTION)
+				result = dlg.ShowModal() == wx.ID_YES
+				if result:
+					global clipboard, cut
+					cut = False
+					clipboard = [path for path in paths if not path.ischild(self.copyintofolder)]
+					newpaths = self.paste(where=self.copyintofolder)
+					
+					paths = newpaths + [path for path in paths if path.ischild(self.copyintofolder)]
+				else:
+					return
+		
 		if any([path.remote for path in paths]):
 			dlg = wx.MessageDialog(self, "Items are not in local folder.\nPlease move these items.", "Error", wx.OK | wx.ICON_WARNING)
 			dlg.ShowModal()
@@ -894,11 +926,15 @@ class MyFrame(wx.Frame):
 		print "pasting", clipboard, "into", where
 		loadDlg = PopupDialog(self, ("Working..."), ("Working.\nPlease wait...."))
 		newdir = where
+		newfiles = []
 		for path in clipboard:
 			if path.dirname() == newdir:
 				basename = path.basename().split(".", 1)
-				newdir = newdir + "/" + basename[0] + " (copy)." + basename[1]
+				newdir = where.join(basename[0] + " (copy)." + basename[1])
+			else:
+				newdir = where.join(path.basename())
 			path.copy(newdir)
+			newfiles.append(newdir.join(path.basename()))
 #			if path.isdir():#os.path.isdir(path):
 #				shutil.copytree(path, newdir)
 #			else:
@@ -907,6 +943,7 @@ class MyFrame(wx.Frame):
 				self.deletepath(path)
 		self.refreshfiles()
 		loadDlg.Destroy()
+		return newfiles
 		
 	def renamefile(self, event=None, item=None):
 		path = item
@@ -944,6 +981,12 @@ class MyFrame(wx.Frame):
 #			self.mainsplitter.SplitHorizontally(self.filesplitter, self.panel)
 #		else:
 #			self.mainsplitter.Unsplit()
+	
+	def fileinfo(self, event=None, item=None):
+		size = item.getsize()
+		dlg = wx.MessageDialog(self, "Path: " + item.path + "\nSize: "+size, "File Info", wx.OK)
+		dlg.ShowModal()
+		dlg.Destroy()
 		
 	def rightclick(self, event):
 		eventsource = event.GetEventObject()
@@ -1001,6 +1044,9 @@ class MyFrame(wx.Frame):
 						("Extract Here", functools.partial(self.extract, item=itemclickedpath))]
 				items += [None, 
 					("Delete", functools.partial(self.deleteitems, items=itemsselected))]
+			if itemclickedpath.file:
+				items += [None, 
+					("File Information", functools.partial(self.fileinfo, item=itemclickedpath))]
 		
 		if items != []:
 			menu = wx.Menu()
@@ -1053,8 +1099,8 @@ class browserapp():
 		if not self.runningmainloop:
 			self.mainloop()
 			
-	def threadwindow(self, basefolder=None, basefoldername=None, basefoldermakedirs=False, openmode=False, openmethod=None):
-		launchwindowmethod = functools.partial(self.launchWindow, basefolder=basefolder, basefoldername=basefoldername, basefoldermakedirs=basefoldermakedirs, openmode=openmode, openmethod=openmethod)
+	def threadwindow(self, basefolder=None, basefoldername=None, basefoldermakedirs=False, openmode=False, openmethod=None, showotherfolders=True, copyinto=False):
+		launchwindowmethod = functools.partial(self.launchWindow, basefolder=basefolder, basefoldername=basefoldername, basefoldermakedirs=basefoldermakedirs, openmode=openmode, openmethod=openmethod, showotherfolders=showotherfolders, copyinto=copyinto)
 		if self.runningmainloop:
 			wx.CallAfter(launchwindowmethod)
 		else:
