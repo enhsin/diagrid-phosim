@@ -17,39 +17,43 @@
 ///
 
 #include "instrument.h"
+#include "ancillary/readtext.h"
+#include "raytrace/constants.h"
 
-int getModeFromTag(std::string tag)
+using readtext::readText;
+
+
+int getModeFromTag(std::string tag) {
 // Find the index for this tag
-{ int num=-1;
+    int num=-1;
     //The allowed tags.
-    if      (tag=="phi")   num=1;
-    else if (tag=="psi")   num=2;
-    else if (tag=="theta") num=3;
-    else if (tag=="xdis")  num=4;
-    else if (tag=="ydis")  num=5;
-    else if (tag=="zdis")  num=6;
-    else if (tag=="z0")    num=7;
-    else if (tag=="z1")    num=8;
-    else if (tag=="z2")    num=9;
-    else if (tag=="z3")    num=10;
-    else if (tag=="z4")    num=11;
-    else if (tag=="z5")    num=12;
-    else if (tag=="z6")    num=13;
-    else if (tag=="z7")    num=14;
-    else if (tag=="z8")    num=15;
-    else if (tag=="z9")    num=16;
-    else if (tag=="z10")   num=17;
-    else if (tag=="z11")   num=18;
-    else if (tag=="z12")   num=19;
-    else if (tag=="z13")   num=20;
-    else if (tag=="z14")   num=21;
-    else if (tag=="z15")   num=22;
-    else if (tag=="z16")   num=23;
-    else if (tag=="z17")   num=24;
-    else if (tag=="z18")   num=25;
-    else if (tag=="z19")   num=26;
-    else if (tag=="z20")   num=27;
-    else if (tag=="z21")   num=28;
+    if      (tag=="phi")   num = 1;
+    else if (tag=="psi")   num = 2;
+    else if (tag=="theta") num = 3;
+    else if (tag=="xdis")  num = 4;
+    else if (tag=="ydis")  num = 5;
+    else if (tag=="zdis")  num = 6;
+    else if (tag=="z1")    num = 7;
+    else if (tag=="z2")    num = 8;
+    else if (tag=="z3")    num = 9;
+    else if (tag=="z4")    num = 10;
+    else if (tag=="z5")    num = 11;
+    else if (tag=="z6")    num = 12;
+    else if (tag=="z7")    num = 13;
+    else if (tag=="z8")    num = 14;
+    else if (tag=="z9")    num = 15;
+    else if (tag=="z10")   num = 16;
+    else if (tag=="z11")   num = 17;
+    else if (tag=="z12")   num = 18;
+    else if (tag=="z13")   num = 19;
+    else if (tag=="z14")   num = 20;
+    else if (tag=="z15")   num = 21;
+    else if (tag=="z16")   num = 22;
+    else if (tag=="z17")   num = 23;
+    else if (tag=="z18")   num = 24;
+    else if (tag=="z19")   num = 25;
+    else if (tag=="z20")   num = 26;
+    else if (tag=="z21")   num = 27;
     // Note that we need to have gTotalNumTags equal to the
     // highest value num can take here. (Set in instrument.h)
     // If you add more tags, be sure to increase gTotalNumTags
@@ -75,7 +79,7 @@ void updateControl(PhosimParser& control,PhosimParser& pars)
             std::string value=pars[key];
             // Search the key for a space
             std::string::size_type idx=key.find(" ");
-            if(idx!= std::string::npos){
+            if (idx != std::string::npos){
                 // Check for the special case of there being an "actuator" command
                 // in the pars file. If there is re enter it in the pars map with the
                 // proper key instead of the concatinated key. Obviously don't add it
@@ -93,6 +97,8 @@ void updateControl(PhosimParser& control,PhosimParser& pars)
                     iss>>line;
                     actuatorValue=line + " " + value;
                     actuatorKey=key;
+                } else if (cmdKey == "dlsm") {
+                    continue;
                 }
                 // See if this is not a body command it must be a control command
                 else if(cmdKey != "body"){
@@ -101,14 +107,13 @@ void updateControl(PhosimParser& control,PhosimParser& pars)
                     control.set(key,value);
                 }
             }
-        }
-        else{
+        } else {
             std::cout<<"#Error: Unexpected(never should happen) error in updateControl!"
                      <<std::endl;
             return;  //opps should never be an error here.
         }
     }
-    //We delay setting the new actuator key in pars so that we don't change 
+    //We delay setting the new actuator key in pars so that we don't change
     // the map while in the middle of acessing it in the above for loop.
     if(haveActuator){
         pars.removeKey(actuatorKey);
@@ -207,11 +212,11 @@ void createBody(std::map< int, std::vector<double>*>&  bodyMap,
 
     // Iterate through the control map
     int numKeys=control.getNumberKeys();
-    for (int keyNum=0;keyNum<numKeys;keyNum++){
+    for (int keyNum = 0; keyNum < numKeys; keyNum++){
         std::string key;
-        bool gotKey=control.getKey(keyNum,key);
+        bool gotKey=control.getKey(keyNum, key);
         if(!gotKey){
-            std::cout<<"#Error in createBody"<<std::endl;
+            std::cout << "#Error in createBody"<<std::endl;
             return;
         }
 
@@ -219,12 +224,12 @@ void createBody(std::map< int, std::vector<double>*>&  bodyMap,
         std::string deviceStr;
         std::string tag;
         std::istringstream iss(key);
-        iss>>deviceStr;
-        iss>>tag;
-        int mode=getModeFromTag(tag);
-        if(mode==-1){
-            std::cout<<"Illegal mode in control.txt or command file: "<<key
-                     <<std::endl;
+        iss >> deviceStr;
+        iss >> tag;
+        int mode = getModeFromTag(tag);
+        if(mode == -1){
+            std::cout << "Illegal mode in control.txt or command file: " << key
+                      << std::endl;
             continue;
         }
         // Ok, we can now fill in an optics vector though we will throw most of it
@@ -232,15 +237,15 @@ void createBody(std::map< int, std::vector<double>*>&  bodyMap,
         std::vector< double > optics;
         optics.resize(gDevCol,0);
 
-        optics.at(0)=mode;
+        optics.at(0) = mode;
 
-        std::string value=control[key];
+        std::string value = control[key];
         std::istringstream isss(value);
         double bodyValue;
 
-        for(int i=1;i<gDevCol;i++){
-            isss>>bodyValue;
-            optics.at(i)=bodyValue;
+        for(int i = 1; i < gDevCol; i++){
+            isss >> bodyValue;
+            optics.at(i) = bodyValue;
         }
 
         //Above got us the "mandatory" stuff, now get any possible extra stuff
@@ -362,11 +367,65 @@ int main(void) {
     int parsNumberExtra=0;
     pars.readCommandStream(std::cin,parsNumberExtra);
 
+    std::string obsID = pars["obshistid"];
+
+    // Read parameters from stdin (readText method)
+    std::string instrdir = "../data/lsst";
+    long obsseed = -1;
+    int filter = 0;
+    double altitude = 90.0 * M_PI/180.;
+    double zenith = M_PI/2.0 - altitude;
+    double temperature = 20.0;
+    std::vector<std::string> pertSurf;
+    readText pars2("obsExtra_" + obsID + ".pars");
+    for (size_t t(0); t < pars2.getSize(); t++) {
+        std::string line(pars2[t]);
+        std::istringstream iss(line);
+        std::string keyName;
+        iss >> keyName;
+
+        readText::get(line, "instrdir", instrdir);
+        readText::get(line, "obsseed", obsseed);
+        readText::get(line, "filter", filter);
+        readText::get(line, "temperature", temperature);
+        if (readText::getKey(line, "altitude", altitude)) {
+            altitude *= M_PI/180.;
+            zenith = M_PI/2.0 - altitude;
+        }
+        if (readText::getKey(line, "zenith", zenith)) zenith *= M_PI/180.0;
+
+        if (keyName == "dlsm" ) {
+            size_t surfaceIndex;
+            iss >> surfaceIndex;
+            std::string linkSurfaces;
+            std::getline(iss, linkSurfaces);
+            if(surfaceIndex>=pertSurf.size()) pertSurf.resize(surfaceIndex+1);
+            pertSurf[surfaceIndex].assign(linkSurfaces);
+        }
+
+    }
+
     // Read optics_0.txt file to get map of surface names to surface ID
-    instrumentFiles.makeSurfaceMap(pars);
+    std::string opticsFile = instrdir + "/optics_0.txt";
+    instrumentFiles.makeSurfaceMap(opticsFile);
 
     //Create and write the "tracking" file.
-    instrumentFiles.makeTrackingFile(pars);
+    //Init the random number generator
+    std::string directory = pars["outputdir"];
+    std::string trackingFileName = directory + "/tracking_" + obsID + ".pars";
+    int seed = (int)pars["obsseed"];
+    if (seed == -1) {
+        RngSetSeedFromTime();
+    } else {
+        RngSetSeed32(seed);
+    }
+    RngUnwind(10000);
+    double vistime = (double)pars["vistime"];
+    double jittertime = 0.1;
+    if (pars.has_key("jittertime")) {
+        jittertime = pars["jittertime"];
+    }
+    instrumentFiles.makeTrackingFile(trackingFileName, vistime, jittertime);
 
     PhosimParser controlPars;
     instrumentFiles.readControlFile(pars,controlPars);
@@ -375,7 +434,7 @@ int main(void) {
     // input command file.
     // These values will over ride any existing or add to the body commands in
     // control
-    if(parsNumberExtra>0){
+    if (parsNumberExtra > 0){
         updateControl(controlPars,pars);
     }
 
@@ -394,13 +453,29 @@ int main(void) {
     // Now go through our control PhosimParser map and fill the body array
     createBody(bodyMap,controlPars, pars, actuatorMatrix, actuatorDistance,actuatorError);
 
-    instrumentFiles.writeBodyFile(bodyMap, pars);
+    std::string opticsFileName=directory + "/optics_" + obsID + ".pars";
+    instrumentFiles.writeBodyFile(bodyMap, opticsFileName, obsID);
 
     //readout, hot pixel
-    instrumentFiles.readoutPars(pars);
+    std::string instrumentDir=pars["instrdir"];
+    std::string focalPlaneLayoutFileName = instrumentDir +"/focalplanelayout.txt";
+    std::string outputDir = pars["outputdir"];
+    std::string readoutString=outputDir+"/readout_" +obsID +"_";
+    std::string segmentationFileName = instrumentDir + "/segmentation.txt";
+    int camConfig;
+    camConfig = pars["camconfig"];
+    instrumentFiles.readoutPars(focalPlaneLayoutFileName,segmentationFileName,readoutString,camConfig);
 
     //body, chipangle, izernike, qevariation
-    instrumentFiles.focalPlanePars(pars);
+    std::string outChipString = outputDir +"/chip_" +obsID+ "_";
+    instrumentFiles.focalPlanePars(focalPlaneLayoutFileName,outChipString,camConfig);
 
+    //dlsm
+    for (size_t t(0); t<pertSurf.size(); t++){
+        if (pertSurf[t] != "") {
+            std::cout<<"surface # "<< t<<" link:"<<pertSurf[t]<<std::endl;
+            dlsm((int) t, pertSurf[t], obsseed, obsID, filter, instrdir, zenith, temperature);
+        }
+    }
     return 0;
 }

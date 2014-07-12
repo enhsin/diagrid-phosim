@@ -23,7 +23,6 @@
 class Trim {
 
  public:
-
     std::string instrdir;
     std::vector<std::string> catalog;
     std::vector<std::string> chipid;
@@ -52,7 +51,7 @@ class Trim {
     double deltaX[maxChip];
     double deltaY[maxChip];
 
-    void xyPosition(double alpha,double delta,double *x,double *y);
+    void xyPosition(double alpha, double delta, double *x, double *y);
     void readCatalog();
     void getDetectorProperties(int d);
     void setup();

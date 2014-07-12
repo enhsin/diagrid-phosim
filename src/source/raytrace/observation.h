@@ -14,12 +14,12 @@
 /// treat results with caution.
 ///
 
-#include "parameters.h"
-#include "vector_type.h"
 #include <string>
 #include <vector>
+#include "parameters.h"
+#include "vector_type.h"
 
-enum SourceTypes {POINT=0,IMAGE=1,GAUSSIAN=2,MOVINGPOINT=4,SERSIC=5,SERSIC2D=6,PINHOLE=7};
+enum SourceTypes {POINT=0, IMAGE=1, GAUSSIAN=2, MOVINGPOINT=4, SERSIC=5, SERSIC2D=6, PINHOLE=7};
 
 struct Source {
     std::vector<double> ra;
@@ -86,8 +86,8 @@ class Observation {
     double h2onorm;
     double aerosoltau;
     double aerosolindex;
-    int NZERN; // move from parameters.h, for chebyshev polynomials
-    std::string pertType;
+    std::vector<std::string> pertType;
+    int NTERM;
     std::vector<std::vector<double> > izernike;
     std::vector<std::vector<double> > body;
     double minr;
@@ -97,6 +97,7 @@ class Observation {
     double screentol;
     double maxr;
     double domeseeing;
+    double toypsf;
     double pixsize;
     double pra;
     double pdec;
@@ -144,6 +145,7 @@ class Observation {
     int chargesharing;
     int pixelerror;
     int chargediffusion;
+    int photoelectric;
     int airrefraction;
     double raydensity;
     double scalenumber;
@@ -186,7 +188,7 @@ class Observation {
     long opdfile;
     long centroidfile;
     long throughputfile;
-    long pixelsx,pixelsy,minx,maxx,miny,maxy;
+    long pixelsx, pixelsy, minx, maxx, miny, maxy;
     long obshistid;
     long pairid;
     long blooming;
@@ -212,16 +214,14 @@ class Observation {
     std::string devtype;
     std::vector<int> feaflag;
     std::vector<std::string> feafile;
-    int untarSEDs;
 
 
-    /* should be part of image but have conflict with settings.c */
+    // should be part of image but have conflict with settings.c
     long nsurf;
     long nmirror;
-    long npertsurf;
     double airmass;
 
-    /* remainder should be ok */
+    // remainder should be ok
     std::vector<std::string> atmospherefile;
     std::vector<std::string> cloudfile;
     std::string trackingfile;
@@ -244,7 +244,7 @@ class Observation {
     Source sources;
 
     // functions
-     int parser();
+    int parser();
     int background();
     int addSource(const std::string & object, int sourcetype);
     int header(fitsfile *faptr);

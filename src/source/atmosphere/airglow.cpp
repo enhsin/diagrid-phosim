@@ -133,7 +133,7 @@ namespace atmosphere {
 
 
         std::ostringstream outfile;
-        outfile << "!" << name << ".fits";
+        outfile << "!" << name << ".fits.gz";
         fits_utils::write_fits_image(in, nx, ny, outfile.str());
     }
 

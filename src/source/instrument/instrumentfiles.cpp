@@ -19,31 +19,12 @@ InstrumentFiles::InstrumentFiles() {
 
 InstrumentFiles::~InstrumentFiles() {
     //nothing to do
-
 }
 
-void InstrumentFiles::makeTrackingFile(PhosimParser& pars)
-// construct the tracking file.
-{
-    //Set up the output tracking file
-    std::string directory = pars["outputdir"];
-    std::string obsID = pars["obshistid"];
-
-    std::string trackingFileName = directory + "/tracking_" + obsID + ".pars";
+void InstrumentFiles::makeTrackingFile(std::string trackingFileName, double vistime, double jittertime) {
 
     std::ofstream outputDataFile(trackingFileName.c_str());
 
-    //Init the random number generator
-    int seed = (int)pars["obsseed"];
-    if (seed == -1) {
-        RngSetSeedFromTime();
-    } else {
-        RngSetSeed32(seed);
-    }
-    RngUnwind(10000);
-
-    //Set up the timing stuff
-    double vistime = (double)pars["vistime"];
     double starttime = -0.5*vistime;
 
     double tempf1 = 0;
@@ -58,20 +39,15 @@ void InstrumentFiles::makeTrackingFile(PhosimParser& pars)
     long prevj = 0;
     long currj = 0;
 
-    double jittertime = 0.1;
-    if (pars.has_key("jittertime")) {
-        jittertime = pars["jittertime"];
-    }
-
     for (long j = 0; j < 10000; j++) {
         double time = starttime + vistime/10000.0*j;  //Step through the time
-        if (j == currj){
+        if (j == currj) {
             tempf1 = RngDouble()*jittertime;
-            if (tempf1 < vistime/10000.0 ){
+            if (tempf1 < vistime/10000.0){
                 tempf1 = vistime/10000.0;
             }
             prevj = currj;
-            currj = (long)(currj + (tempf1/vistime)*10000.0);
+            currj = static_cast<long>(currj + (tempf1/vistime)*10000.0);
             if (currj == prevj) currj += 1;
             tempf5 = tempf2;
             tempf6 = tempf3;
@@ -82,35 +58,35 @@ void InstrumentFiles::makeTrackingFile(PhosimParser& pars)
             tempf4 = random_gaussian()*sqrt((jittertime/2.0)/vistime) + tempf7;
             tempf9 = random_gaussian()*sqrt((jittertime/2.0)/vistime) + tempf8;
         }
-        double jitterele = tempf2*(j - prevj)/(currj - prevj)+tempf5*(currj - j)/(currj - prevj);
-        double jitterazi = tempf3*(j - prevj)/(currj - prevj)+tempf6*(currj - j)/(currj - prevj);
-        double jitterrot = tempf4*(j - prevj)/(currj - prevj)+tempf7*(currj - j)/(currj - prevj);
-        double jitterwind = tempf9*(j - prevj)/(currj - prevj)+tempf8*(currj - j)/(currj - prevj);
+        double jitterele = tempf2*(j - prevj)/(currj - prevj) + tempf5*(currj - j)/(currj - prevj);
+        double jitterazi = tempf3*(j - prevj)/(currj - prevj) + tempf6*(currj - j)/(currj - prevj);
+        double jitterrot = tempf4*(j - prevj)/(currj - prevj) + tempf7*(currj - j)/(currj - prevj);
+        double jitterwind = tempf9*(j - prevj)/(currj - prevj) + tempf8*(currj - j)/(currj - prevj);
 
         outputDataFile << std::fixed << std::setprecision(6) << time << " " << jitterele
-                      <<" " << jitterazi << " "<< jitterrot << " " << jitterwind << std::endl;
+                       << " " << jitterazi << " "<< jitterrot << " " << jitterwind << std::endl;
     }
     outputDataFile.close();
 }
 
 
-int InstrumentFiles::readControlFile(PhosimParser& pars,PhosimParser& controlPars)
+int InstrumentFiles::readControlFile(PhosimParser& pars, PhosimParser& controlPars) {
 // *************************************************************************
 // This method reads in the control.txt file to get the optics configuration
 // Later this will be used to fill the body and zernike matices.
 // Results are left in the pars map. Return numnber of entries in that map
 // ************************************************************************
-{
+
     // *********************************************************************
     // Open the control.txt files. Read it in first
     // We are going to do this the easy way and use rhwe PhosimParser class to
     // decode it. Note we had to add a comment ignoror to the PhosimParser class
     // *********************************************************************
-    std::string directory=pars["instrdir"];
-    std::string controlFileName= directory + "/control.txt";
+    std::string directory = pars["instrdir"];
+    std::string controlFileName = directory + "/control.txt";
     std::ifstream control(controlFileName.c_str());
 
-    int numExtra=0;
+    int numExtra = 0;
     controlPars.readCommandStream(control,numExtra);
     return numExtra;
 }
@@ -137,7 +113,7 @@ void InstrumentFiles::readActuatorFile(PhosimParser& pars,
     // First get the number of lines in the control.txt file. zernike, body and
     // camera lines combined that were found in the control.txt file
     // ********************************************************************
-    int numLines=controlPars.getNumberKeys();
+    int numLines = controlPars.getNumberKeys();
 
     // ************************************************
     // Now read in the actuator file. This file is suposed to have
@@ -161,9 +137,9 @@ void InstrumentFiles::readActuatorFile(PhosimParser& pars,
         // comment. Delete the # and all followin chars from the string.
         // *********************************************************************
         std::string::size_type idx=line.find("#");
-        if(idx!=std::string::npos){           //ok there is a comment in the line
-            if(idx!=0){
-                line=line.substr(0,idx-1);
+        if(idx != std::string::npos){           //ok there is a comment in the line
+            if(idx != 0){
+                line = line.substr(0, idx - 1);
             }
             else{
                 continue;               //Skip the line, its all comment
@@ -177,17 +153,17 @@ void InstrumentFiles::readActuatorFile(PhosimParser& pars,
 
         std::vector<std::string> tokens;
         std::string value;
-        while(iss>>value){     //This uses white space (see above) to
+        while(iss >> value){     //This uses white space (see above) to
             tokens.push_back(value);  //seperate values
         }
-        int numTokens=tokens.size();
-        if(numTokens==0){         //blank line
+        int numTokens = tokens.size();
+        if (numTokens == 0){         //blank line
             continue;
         }
         actuatorLines.push_back(line);
         numberOfTokens.push_back(numTokens);
     }
-    int numActuator=actuatorLines.size(); //No idea what determines how many
+    int numActuator = actuatorLines.size(); //No idea what determines how many
     //lines we should have.
 
     // ********************************************************************
@@ -213,24 +189,21 @@ void InstrumentFiles::readActuatorFile(PhosimParser& pars,
         // *********************************************************************
         // Hom many values do we have on this line
         // *********************************************************************
-        int numMax=numLines;
+        int numMax = numLines;
         if(numberOfTokens.at(i)<numLines+2){
-            numMax=numberOfTokens.at(i)-2;
+            numMax = numberOfTokens.at(i)-2;
         }
-        for(int jj=0;jj<numMax;jj++){
-            iss>>value;
-            actuatorMatrix.at(jj).at(i)=value;
+        for(int jj = 0; jj < numMax; jj++){
+            iss >> value;
+            actuatorMatrix.at(jj).at(i) = value;
         }
-        iss>>value;
+        iss >> value;
         actuatorDistance.at(i)=value;
 
-        iss>>value;
+        iss >> value;
         actuatorError.at(i)=value;
     }
 
-    // **********************************************************************
-    // Done. Now check the "actuatorstr" from the input command file
-    // ********************************************************************
     // Make sure we have actuatorstr
 
     if(pars.has_key("actuator")){
@@ -256,80 +229,64 @@ void InstrumentFiles::readActuatorFile(PhosimParser& pars,
 }
 // ***********************************************************************
 
-void InstrumentFiles::writeBodyFile(
-                                    std::map< int, std::vector< double>* >& bodyMap,
-                                    PhosimParser& pars)
-// *********************************************************************
+void InstrumentFiles::writeBodyFile(std::map< int, std::vector< double>* >& bodyMap, std::string opticsFileName, std::string obsID) {
 // Write the body and zernike stuff to a file
-// *********************************************************************
-{
-    std::string directory= pars["outputdir"];
-    std::string obsID=pars["obshistid"];
-    std::string opticsFileName=directory + "/optics_" + obsID + ".pars";
+
     std::ofstream ofs(opticsFileName.c_str());
 
-    ofs<<"trackingfile tracking_"<<obsID<<".pars"<<std::endl;
+    ofs << "trackingfile tracking_" << obsID << ".pars" << std::endl;
     std::map< int, std::vector< double >* >::iterator bodyPos;
     std::vector < double >*  pBodyDevice;//pointer to vector we will find on heap
 
-    // **********************************************************************
     // Iterate through the devices
-    // **********************************************************************
-    for (bodyPos=bodyMap.begin(); bodyPos!=bodyMap.end();++bodyPos){
-        int devIndex=bodyPos->first;
-        pBodyDevice=bodyPos->second;
+    for (bodyPos = bodyMap.begin(); bodyPos != bodyMap.end(); ++bodyPos){
+        int devIndex = bodyPos->first;
+        pBodyDevice = bodyPos->second;
         int numBodyValues=pBodyDevice->size();
-        for (int i=0;i<numBodyValues;i++){
-            if (pBodyDevice->at(i)!=-5){
-                if (i<6)
-                    ofs<<"body "<<devIndex<<" "<<i<<" "
-                       <<std::scientific<<std::setprecision(8)<<pBodyDevice->at(i)
-                       <<std::endl;
+        for (int i = 0; i < numBodyValues; i++){
+            if (pBodyDevice->at(i) != -5){
+                if (i < 6)
+                    ofs << "body " << devIndex << " " << i << " "
+                        << std::scientific << std::setprecision(8) << pBodyDevice->at(i)
+                        << std::endl;
                 else if (i>=6)
-                    ofs<<"izernike "<<devIndex<<" "<<i-6<<" "
-                       <<std::scientific<<std::setprecision(8)<<pBodyDevice->at(i)
-                       <<std::endl;
+                    ofs << "izernike " << devIndex << " " << i-6 << " "
+                        << std::scientific << std::setprecision(8) << pBodyDevice->at(i)
+                        << std::endl;
             }
         }
     }
     ofs.close();
     return;
 }
-// *************************************************************************
 
-bool InstrumentFiles::getDeviceIndex(std::string deviceStr, int& deviceIndex)
-// ***************************************************************
+bool InstrumentFiles::getDeviceIndex(std::string deviceStr, int& deviceIndex) {
+
 // Look for deviceStr in our Surface map and if found return index.
 // If not found false
-// ***************************************************************
-{
-    fSurfaceMapPos=fSurfaceMap.find(deviceStr);
-    if(fSurfaceMapPos==fSurfaceMap.end()){
+
+    fSurfaceMapPos = fSurfaceMap.find(deviceStr);
+    if (fSurfaceMapPos == fSurfaceMap.end()){
         return false;
-    }
-    else{
-        deviceIndex=fSurfaceMapPos->second;
+    } else {
+        deviceIndex = fSurfaceMapPos->second;
         return true;
     }
 }
-// **********************************************************************
 
 
 
-;
-void InstrumentFiles::readoutPars(PhosimParser& pars) 
-// **********************************************************************
+
+void InstrumentFiles::readoutPars(std::string focalPlaneLayoutFileName, std::string segmentationFileName, std::string readoutString, int camConfig) {
+
 // Read in the focalplanelayout.txt file and the segmentation.txt file and
 // from those make up and write out the readout_*.pars
-// **********************************************************************
-{
-    RngSetSeed32_reseed(1000);   //Is this enough code?
+
+    RngSetSeed32_reseed(1000);
 
     // ****************************************************************
     //Setup and read in the focalplanelayout.txt file
     // ****************************************************************
-    std::string directory=pars["instrdir"];
-    std::string focalPlaneLayoutFileName =directory+"/focalplanelayout.txt";
     std::ifstream fpLayout(focalPlaneLayoutFileName.c_str());
     PhosimParser fpLPars;
     fpLPars.readStream(fpLayout);
@@ -337,7 +294,6 @@ void InstrumentFiles::readoutPars(PhosimParser& pars)
     // *****************************************************************
     //Setup and read in the segemtation.txt file
     // *****************************************************************
-    std::string segmentationFileName =directory + "/segmentation.txt";
     std::ifstream segmentation(segmentationFileName.c_str());
     PhosimParser segmentationPars;
     segmentationPars.readSegmentation(segmentation);
@@ -348,8 +304,6 @@ void InstrumentFiles::readoutPars(PhosimParser& pars)
     bool useGroup1=false;
     bool useGroup2=false;
 
-    int camConfig;
-    pars.get("camconfig",camConfig);
     if(camConfig & 1){
         useGroup0=true;
     }
@@ -369,7 +323,7 @@ void InstrumentFiles::readoutPars(PhosimParser& pars)
         std::string chipID;
         bool gotKey=fpLPars.getKey(keyNum,chipID);
         if(!gotKey){
-            std::cout<<"Error#1 in readoutPars"<<std::endl;
+            std::cout << "Error#1 in readoutPars" << std::endl;
             return;
         }
         // **********************************************
@@ -380,7 +334,7 @@ void InstrumentFiles::readoutPars(PhosimParser& pars)
         std::string::size_type idx=line.find("Group");
         bool writeOut=false;
         if(idx!=std::string::npos){
-            std::string groupID=line.substr(idx+5,1);//gets charaxcter at end of Group
+            std::string groupID=line.substr(idx+5,1);//gets character at end of Group
             if( (groupID=="0" && useGroup0) || (groupID=="1" && useGroup1) ||
                 (groupID=="2" && useGroup2)){
                 writeOut=true;
@@ -393,11 +347,11 @@ void InstrumentFiles::readoutPars(PhosimParser& pars)
         // This key will have as data the number of amplifies for this chip that
         // follow in the segmentation.txt file. They have keys like R00_S21_C06
         // *********************************************************************
-        if(writeOut){
-            bool gotKey=segmentationPars.has_key(chipID);//Better have this key in the
-            if(!gotKey){                            //segmentation.txt file!
-                std::cout<<"Error#2 in readoutPars. Can not find key:"<<chipID
-                         <<" in segmentation.txt  file"<<std::endl;
+        if (writeOut){
+            bool gotKey = segmentationPars.has_key(chipID);//Better have this key in the
+            if (!gotKey){                            //segmentation.txt file!
+                std::cout << "Error#2 in readoutPars. Cannot find key:" << chipID
+                          << " in segmentation.txt  file" << std::endl;
                 return;
             }
             // ********************************************************************
@@ -406,10 +360,7 @@ void InstrumentFiles::readoutPars(PhosimParser& pars)
             // Get the number of amplifiers for this chip. We make a seperate
             // output file for each chip
             // ********************************************************************
-            std::string outputDir= pars["outputdir"];
-            std::string obsID=pars["obshistid"];
-            std::string outputChipFileName= outputDir+"/readout_" +obsID +"_" +
-                chipID + ".pars";
+            std::string outputChipFileName= readoutString + chipID + ".pars";
             std::ofstream outChipStream(outputChipFileName.c_str());
 
             std::vector<std::string> amplifiers;
@@ -449,78 +400,63 @@ void InstrumentFiles::readoutPars(PhosimParser& pars)
                 double hotpixel  = tokens.at(18);
                 double hotcolumn = tokens.at(19);
 
-                // ********************************************************
                 // Write it all out
-                // ********************************************************
-
-                outChipStream<<"serialread    "<<j<<" "<<serialread<<std::endl;
-                outChipStream<<"parallelread  "<<j<<" "<<parallelread<<std::endl;
-                outChipStream<<"gain          "<<j<<" "<<gain<<std::endl;
-                outChipStream<<"bias          "<<j<<" "<<bias<<std::endl;
-                outChipStream<<"readnoise     "<<j<<" "<<readnoise<<std::endl;
-                outChipStream<<"darkcurrent   "<<j<<" "<<darkcurrent<<std::endl;
-                outChipStream<<"parallelprescan   "<<j<<" "<<parallelPrescan<<std::endl;
-                outChipStream<<"serialoverscan    "<<j<<" "<<serialOverscan<<std::endl;
-                outChipStream<<"serialprescan     "<<j<<" "<<serialPrescan<<std::endl;
-                outChipStream<<"paralleloverscan  "<<j<<" "<<parallelOverscan<<std::endl;
-                outChipStream<<"hotpixelrate  "<<j<<" "<<hotpixel<<std::endl;
-                outChipStream<<"hotcolumnrate "<<j<<" "<<hotcolumn<<std::endl;
+                outChipStream << "serialread    " << j << " " << serialread << std::endl;
+                outChipStream << "parallelread  " << j << " " << parallelread << std::endl;
+                outChipStream << "gain          " << j << " " << gain << std::endl;
+                outChipStream << "bias          " << j << " " << bias << std::endl;
+                outChipStream << "readnoise     " << j << " " << readnoise << std::endl;
+                outChipStream << "darkcurrent   " << j << " " << darkcurrent << std::endl;
+                outChipStream << "parallelprescan   " << j << " " << parallelPrescan << std::endl;
+                outChipStream << "serialoverscan    " << j << " " << serialOverscan << std::endl;
+                outChipStream << "serialprescan     " << j << " " << serialPrescan << std::endl;
+                outChipStream << "paralleloverscan  " << j << " " << parallelOverscan << std::endl;
+                outChipStream << "hotpixelrate  " << j << " " << hotpixel << std::endl;
+                outChipStream << "hotcolumnrate " << j << " " << hotcolumn << std::endl;
             }
             outChipStream.close();
         } //end of  writeout if
     }   //end of chip loop
     return;
 }
-void InstrumentFiles::makeSurfaceMap(PhosimParser& pars)
-// *********************************************************************
-//Go through optics_0.txt file thats in the specified instrument directory
+void InstrumentFiles::makeSurfaceMap(std::string opticsFile) {
+
+// Go through optics_0.txt file thats in the specified instrument directory
 // and create a map of surface names to surface index. Ignore "none" in
 // both key and surface type
 // Also get last device and last surface numbers
-// *********************************************************************
-{
-    // ***************************************************************
-    // Search though one of the optics definintion files for lastDevice and last
-    // Surface. I'm not sure why.
-    // ***************************************************************
-    std::string instrumentDir=pars["instrdir"];
-    std::string opticsFileName= instrumentDir + "/optics_0.txt";
-    readText opticsPars(opticsFileName);
+
+    readText opticsPars(opticsFile);
 
     std::string surfaceName;
     std::string surfaceType;
-    fLastSurface=-1;
-    fLastDevice=-1;
-    int dev=0;
-    for (size_t t(0);t<opticsPars.getSize();t++){    
+    fLastSurface = -1;
+    int dev = 0;
+    for (size_t t(0); t < opticsPars.getSize(); t++) {
         std::istringstream iss(opticsPars[t]);
-        iss>>surfaceName;
-        iss>>surfaceType;
+        iss >> surfaceName;
+        iss >> surfaceType;
 
-        if(surfaceName!="none" && surfaceType!="none"){
-            fSurfaceMapPos=fSurfaceMap.find(surfaceName);
-            if(fSurfaceMapPos!=fSurfaceMap.end()){
-                fSurfaceMap[surfaceName]=dev;
+        if (surfaceName != "none" && surfaceType != "none"){
+            fSurfaceMapPos = fSurfaceMap.find(surfaceName);
+            if (fSurfaceMapPos != fSurfaceMap.end()){
+                fSurfaceMap[surfaceName] = dev;
                 dev++;
             }
         }
 
-        if( (surfaceType=="mirror") || (surfaceType=="det") ){
-            fLastDevice++;            //counting only mirrors and det
-        }
-
-        if(surfaceType!="none"){
-            fLastSurface++;          //counting all surfaces
+        if (surfaceType != "none"){
+            fLastSurface++;
         }
     }
     return;
+
 }
-// **************************************************************************
 
 
 
 
-void InstrumentFiles::focalPlanePars(PhosimParser& pars)
+void InstrumentFiles::focalPlanePars(std::string focalPlaneLayoutFileName, std::string outChipString, int camConfig)
 //  ***************************************************************************
 // This function makes the chip_999999_R00_S22_C1.pars type files that have
 // all the body and zenike values for the chip. That info comes form the
@@ -535,8 +471,6 @@ void InstrumentFiles::focalPlanePars(PhosimParser& pars)
     // ***********************************************************************
     //Setup and read in the focalplanelayout.txt file into a PhosiumParser map.
     // ****************************************************************
-    std::string instrumentDir=pars["instrdir"];
-    std::string focalPlaneLayoutFileName =instrumentDir +"/focalplanelayout.txt";
     std::ifstream fpLayout(focalPlaneLayoutFileName.c_str());
     PhosimParser fpLPars;
     fpLPars.readStream(fpLayout);
@@ -547,76 +481,71 @@ void InstrumentFiles::focalPlanePars(PhosimParser& pars)
     // **********************************************************************
     // We use the bit settings in camConfig to specify the allowed groups
     // Ie. camConfig= 7 meas groups 0 and 1 and 2.
-    // decode comacomfig
+    // decode camcomfig
     // **********************************************************************
     bool useGroup0=false;
     bool useGroup1=false;
     bool useGroup2=false;
 
-    int camConfig;
-    camConfig=pars["camconfig"];
-    if(camConfig & 1){
+    if (camConfig & 1){
         useGroup0=true;
     }
-    if(camConfig & 2){
+    if (camConfig & 2){
         useGroup1=true;
     }
-    if(camConfig & 4){
+    if (camConfig & 4){
         useGroup2=true;
     }
 
     // *****************************************************************
     // Go through the fpLayout map
     // *****************************************************************
-    int numKeys=fpLPars.getNumberKeys();
-    for (int keyNum=0;keyNum<numKeys;keyNum++){
+    int numKeys = fpLPars.getNumberKeys();
+    for (int keyNum = 0; keyNum < numKeys; keyNum++){
         std::string chipID;
-        bool gotKey=fpLPars.getKey(keyNum,chipID);
-        if(!gotKey){
-            std::cout<<"Error#1 in focalPlanePars"<<std::endl;
+        bool gotKey = fpLPars.getKey(keyNum,chipID);
+        if (!gotKey){
+            std::cout << "Error#1 in focalPlanePars" << std::endl;
             return;
         }
         // **********************************************
         // Look for the Group designation
         // **********************************************
 
-        std::string line=fpLPars[chipID];
-        std::string::size_type idx=line.find("Group");
-        bool writeOut=false;
-        if(idx!=std::string::npos){
-            std::string groupID=line.substr(idx+5,1);
-            //gets charaxcter at end of Group
-            if( (groupID=="0" && useGroup0) || (groupID=="1" && useGroup1) ||
-                (groupID=="2" && useGroup2)){
+        std::string line = fpLPars[chipID];
+        std::string::size_type idx = line.find("Group");
+        bool writeOut = false;
+        if (idx != std::string::npos) {
+            std::string groupID = line.substr(idx+5,1);
+            //gets character at end of Group
+            if( (groupID == "0" && useGroup0) || (groupID == "1" && useGroup1) ||
+                (groupID == "2" && useGroup2)) {
                 writeOut=true;
             }
         }
 
         if (writeOut) {
-            std::string outputDir=pars["outputdir"];
-            std::string obsID=pars["obshistid"];
-            std::string outChipFileName=outputDir +"/chip_" +obsID+ "_" + chipID +
-                ".pars";
+            std::string outChipFileName = outChipString + chipID + ".pars";
             std::ofstream outChipFile(outChipFileName.c_str());
 
             // ********************************************************************
             // Write out the body commands for this chip
             // ********************************************************************
-            line=line.substr(idx+6);
+            line = line.substr(idx + 6);
             std::istringstream iss(line);
 
             //Body values first
-            for(int i = 0; i < 3; i++) {
+            for (int i = 0; i < 3; i++) {
                 double bodyValue;
                 iss >> bodyValue;
-                outChipFile<<"body "<<(fLastSurface+1) <<" "<<i<<" "
-                           <<std::fixed<<std::setprecision(7)<<bodyValue*M_PI/180.0<<std::endl;
+                outChipFile << "body " << (fLastSurface+1)  << " " << i << " "
+                            << std::fixed << std::setprecision(7) << bodyValue*M_PI/180.0 << std::endl;
             }
-            for(int i=0;i<3;i++) {
+            for (int i = 0; i < 3; i++) {
                 double bodyValue;
-                iss>>bodyValue;
-                outChipFile<<"body "<<(fLastSurface+1) <<" "<< i+3 <<" "
-                           <<std::fixed<<std::setprecision(7)<<bodyValue<<std::endl;
+                iss >> bodyValue;
+                outChipFile << "body " << (fLastSurface+1)  << " " <<  i+3  << " "
+                            << std::fixed << std::setprecision(7) << bodyValue << std::endl;
             }
 
             std::string pertType;
@@ -624,31 +553,31 @@ void InstrumentFiles::focalPlanePars(PhosimParser& pars)
 
             //zernike values next
             if (pertType == "zern") {
-                for(int i=0;i<21;i++) {
+                for (int i = 0; i < NZERN; i++) {
                     double zernikeValue;
-                    iss>>zernikeValue;
-                    outChipFile<<"izernike "<<fLastDevice<<" "<<i<<" "
-                               <<std::scientific<<std::setprecision(6)<<zernikeValue/1000.
-                               <<std::endl;
+                    iss >> zernikeValue;
+                    outChipFile << "izernike " << fLastSurface << " " << i << " "
+                                << std::scientific << std::setprecision(6) << zernikeValue/1000.
+                                << std::endl;
                 }
             } else if (pertType == "chebyshev") {
-                for(int i=0;i<21;i++) {
+                for (int i = 0; i < NCHEB; i++) {
                     double chebyshevValue;
-                    iss>>chebyshevValue;
-                    outChipFile<<"ichebyshev "<<fLastDevice<<" "<<i<<" "
-                               <<std::scientific<<std::setprecision(6)<<chebyshevValue/1000.
-                               <<std::endl;
+                    iss >> chebyshevValue;
+                    outChipFile << "ichebyshev " << fLastSurface << " " << i << " "
+                                << std::scientific << std::setprecision(6) << chebyshevValue/1000.
+                                << std::endl;
                 }
             } else {
-                std::cout<<"Error: Unkown perturbation type "<<pertType<<std::endl;
+                std::cout << "Error: Unknown perturbation type " << pertType << std::endl;
                 return;
             }
 
             // QE variation last
             double QEVar;
-            iss>>QEVar;
-            outChipFile<<"qevariation "<<std::fixed<<std::setprecision(6)<<QEVar
-                       <<std::endl;
+            iss >> QEVar;
+            outChipFile << "qevariation " << std::fixed << std::setprecision(6) << QEVar
+                        << std::endl;
         } //Group test
     } //chip loop
     return;

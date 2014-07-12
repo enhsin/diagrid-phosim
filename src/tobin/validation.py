@@ -12,6 +12,24 @@ class Validation:
         self.flat=opt.flat
         self.task=opt.task
 
+        if self.task=='all':
+            self.unit=True
+            self.speed=True
+        elif self.task=='none':
+            self.unit=False
+            self.speed=False
+        else:
+            lstr = self.task.split('|')
+            if 'unit' in lstr:
+                self.unit=True
+            else:
+                self.unit=False
+            if 'speed' in lstr:
+                self.speed=True
+            else:
+                self.speed=False
+
+
         if self.grid=='PBS':
             runProgram("source /etc/profile.d/modules.sh; module load gcc/4.7.2; module load python/2.7; python -V; gcc -v")
             runProgram("git pull; make")
@@ -85,6 +103,8 @@ class Validation:
                         self.localCommand.append(None)
                         if self.task=='all':
                             self.runFlag.append(True)
+                        elif self.task=='none':
+                            self.runFlag.append(False)
                         else:
                             self.runFlag.append(False)
                             lstr = self.task.split('|')
@@ -169,7 +189,9 @@ class Validation:
         filters=['u','g','r','i','z','y']
         if self.grid=='PBS':
             for f in range(6):
-                hh, mm=self.findCPUtime('F_'+str(f))
+                #hh, mm=self.findCPUtime('F_'+str(f))
+                hh=144
+                mm=0
                 sub='F_'+str(f)+'.sub'
                 submitfile=open(sub,'w')
                 submitfile.write('#!/bin/sh -l\n')
@@ -179,7 +201,7 @@ class Validation:
                 submitfile.write('module load python/2.7\n')
                 submitfile.write('cd $PBS_O_WORKDIR\n')
                 submitfile.write('unset DISPLAY\n')
-                submitfile.write('time python phosim.py examples/flats/flat'+filters[f]+'_instcat_0 -s R22_S11 -o '+outputDir+'\n')
+                submitfile.write('time python phosim.py examples/flats/flat'+filters[f]+'_instcat_1 -s R22_S11 -o '+outputDir+'\n')
                 submitfile.close()
                 runProgram('qsub -q peters11 '+sub)
         else:
@@ -196,8 +218,10 @@ class Validation:
                     runProgram('python phosim.py '+self.catalog[i]+' -c '+self.command[i]+' -o '+self.outputDir+' '+self.args[i])
                     if self.localCommand[i] is not None:
                         runProgram(self.localCommand[i])
-        self.runUnitTest()
-        self.runSpeedTest()
+        if self.unit:
+            self.runUnitTest()
+        if self.speed:
+            self.runSpeedTest()
         if self.flat==1:
             self.generateFlats()
 

@@ -13,41 +13,33 @@ def initEnvironment(self):
     fp=File("version")
     fp.addPFN(PFN("file://" + os.path.join(self.binDir,'version'), "local"))
     self.dax.addFile(fp)
-    for f in ['m1_protAl_Ideal','m2_protAl_Ideal','m3_protAl_Ideal','silica_dispersion','lenses',
-              'detectorar','focalplanelayout','silicon','location','central_wavelengths','spider',
-              'tracking','segmentation']:
+    tarName='raytrace_'+observationID+'.tar'
+    tar = tarfile.open(tarName, "w")
+    for f in ['focalplanelayout','central_wavelengths','segmentation']:
         fp=File(f+'.txt')
         fp.addPFN(PFN("file://" + os.path.join(self.instrDir,f+'.txt'), "local"))
-        self.dax.addFile(fp)
+    for f in ['m1_protAl_Ideal','m2_protAl_Ideal','m3_protAl_Ideal','silica_dispersion','lenses',
+              'detectorar','focalplanelayout','silicon','location','central_wavelengths','spider','tracking']:
+        tar.add(os.path.join(self.instrDir,f+'.txt'),f+'.txt')
     for filt in range(6):
-        fp=File('optics_'+str(filt)+'.txt')
-        fp.addPFN(PFN("file://" + os.path.join(self.instrDir,'optics_'+str(filt)+'.txt'), "local"))
-        self.dax.addFile(fp)
-        fp=File('filter_'+str(filt)+'.txt')
-        fp.addPFN(PFN("file://" + os.path.join(self.instrDir,'filter_'+str(filt)+'.txt'), "local"))
-        self.dax.addFile(fp)
+        tar.add(os.path.join(self.instrDir,'optics_'+str(filt)+'.txt'),'optics_'+str(filt)+'.txt')
+        tar.add(os.path.join(self.instrDir,'filter_'+str(filt)+'.txt'),'filter_'+str(filt)+'.txt')
     for f in ['rayprofile','nprofile','o3cs','o3profile','o2cs','h2ocs','h2oprofile']:
-        fp=File(f+'.txt')
-        fp.addPFN(PFN("file://" + os.path.join(self.dataDir, 'atmosphere', f+'.txt'), "local"))
-        self.dax.addFile(fp)
+        tar.add(os.path.join(self.dataDir, 'atmosphere', f+'.txt'),f+'.txt')
     for f in ['darksky_sed','lunar_sed','sed_dome','sersic_const']:
-        fp=File(f+'.txt')
-        fp.addPFN(PFN("file://" + os.path.join(self.dataDir, 'sky', f+'.txt'), "local"))
-        self.dax.addFile(fp)
+        tar.add(os.path.join(self.dataDir, 'sky', f+'.txt'),f+'.txt')
     for n in range(1,131):
-        fp=File('iray'+str(n)+'.txt')
-        fp.addPFN(PFN("file://" + os.path.join(self.dataDir, 'cosmic_rays', 'iray'+str(n)+'.txt'), "local"))
-        self.dax.addFile(fp)
-    for f in ['cloudscreen_'+observationID+'_1.fits', 'cloudscreen_'+observationID+'_2.fits', 'airglowscreen_'+observationID+'.fits']:
-        fp=File(f)
-        fp.addPFN(PFN("file://" + os.path.join(os.getcwd(),f), "local"))
-        self.dax.addFile(fp)
+        tar.add(os.path.join(self.dataDir, 'cosmic_rays', 'iray'+str(n)+'.txt'),'iray'+str(n)+'.txt')
+    for f in ['cloudscreen_'+observationID+'_1.fits.gz', 'cloudscreen_'+observationID+'_2.fits.gz', 'airglowscreen_'+observationID+'.fits.gz']:
+        tar.add(f)
     for layer in range(7):
         for f in ['coarsep','coarsex','coarsey','fineh','finep',
                  'largep','largex','largey','mediumh','mediump','mediumx','mediumy']:
-            fp=File('atmospherescreen_'+observationID+'_'+str(layer)+'_'+f+'.fits')
-            fp.addPFN(PFN("file://" + os.path.join(os.getcwd(),'atmospherescreen_'+observationID+'_'+str(layer)+'_'+f+'.fits'), "local"))
-            self.dax.addFile(fp)
+            tar.add('atmospherescreen_'+observationID+'_'+str(layer)+'_'+f+'.fits.gz')
+    tar.close()
+    fp=File(tarName)
+    fp.addPFN(PFN("file://" + os.path.join(os.getcwd(),tarName), "local"))
+    self.dax.addFile(fp)
     fp=File('tracking_'+observationID+'.pars')
     fp.addPFN(PFN("file://" + os.path.join(os.getcwd(),'tracking_'+observationID+'.pars'), "local"))
     self.dax.addFile(fp)
@@ -110,12 +102,12 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
         fp=File(jobName+'.pars')
         fp.addPFN(PFN("file://" + os.path.join(os.getcwd(),jobName+'.pars'), "local"))
         self.dax.addFile(fp)
-        for f in ['cloudscreen_'+observationID+'_1.fits', 'cloudscreen_'+observationID+'_2.fits', 'airglowscreen_'+observationID+'.fits']:
+        for f in ['cloudscreen_'+observationID+'_1.fits.gz', 'cloudscreen_'+observationID+'_2.fits.gz', 'airglowscreen_'+observationID+'.fits.gz']:
             eval('raytrace'+str(ckpt)+'.uses(File("'+f+'"), link=Link.INPUT)')
         for layer in range(7):
             for f in ['coarsep','coarsex','coarsey','fineh','finep',
                      'largep','largex','largey','mediumh','mediump','mediumx','mediumy']:
-                eval('raytrace'+str(ckpt)+'.uses(File("atmospherescreen_'+observationID+'_'+str(layer)+'_'+f+'.fits"), link=Link.INPUT)')
+                eval('raytrace'+str(ckpt)+'.uses(File("atmospherescreen_'+observationID+'_'+str(layer)+'_'+f+'.fits.gz"), link=Link.INPUT)')
         eval('raytrace'+str(ckpt)+'.uses(File("version"), link=Link.INPUT)')
         for f in ['m1_protAl_Ideal','m2_protAl_Ideal','m3_protAl_Ideal','silica_dispersion','lenses',
                   'detectorar','focalplanelayout','silicon','location','central_wavelengths','spider','tracking']:
@@ -130,7 +122,7 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
         for n in range(1,131):
             eval('raytrace'+str(ckpt)+'.uses(File("iray'+str(n)+'.txt"), link=Link.INPUT)')
         eval('raytrace'+str(ckpt)+'.uses(File("tracking_'+observationID+'.pars"), link=Link.INPUT)')
-        eval('raytrace'+str(ckpt)+'.uses(File("SEDs_"+observationID+"_"+cid+".tar"), link=Link.INPUT)')
+        eval('raytrace'+str(ckpt)+'.uses(File("raytrace_"+observationID+".tar"), link=Link.INPUT)')
         if ckpt==0:
             if eid=='E000':
                 tarName='SEDs_'+observationID+'_'+cid+'.tar'
@@ -142,11 +134,11 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
                 fp.addPFN(PFN("file://" + os.path.join(os.getcwd(),tarName), "local"))
                 self.dax.addFile(fp)
             if ckpt!=checkpoint:
-                eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt.fits"), link=Link.OUTPUT, transfer=False, register=False)')
-                eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp.fits"), link=Link.OUTPUT, transfer=False, register=False)')
+                eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt.fits.gz"), link=Link.OUTPUT, transfer=False, register=False)')
+                eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp.fits.gz"), link=Link.OUTPUT, transfer=False, register=False)')
         else:
-            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt.fits"), link=Link.INPUT)')
-            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp.fits"), link=Link.INPUT)')
+            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt.fits.gz"), link=Link.INPUT)')
+            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp.fits.gz"), link=Link.INPUT)')
         if ckpt==checkpoint:
             fileName=instrument+'_e_'+fid+'.fits.gz'
             if run_e2adc:

@@ -66,7 +66,6 @@ int Image::telSetup () {
     coating.setup(totSurf);
 
     nsurf = 0;
-    npertsurf = 0;
     runningz = 0.0;
     nmirror = 0;
     for (size_t t(0); t < totSurf; t++){
@@ -105,10 +104,9 @@ int Image::telSetup () {
         if (surfacetype != "none") {
             surface.asphere(nsurf, SURFACE_POINTS);
             if (surface.surfacetype[nsurf] == MIRROR || surface.surfacetype[nsurf] == DETECTOR || surface.surfacetype[nsurf] == LENS) {
-                surface.surfacepert[nsurf] = npertsurf;
-                npertsurf++;
+                perturbation.zernikeflag.push_back(zernikemode);
             } else {
-                surface.surfacepert[nsurf] = 0;
+                perturbation.zernikeflag.push_back(0);
             }
 
             // COATINGS
@@ -199,17 +197,16 @@ int Image::telSetup () {
     /* PERTURBATIONS */
 
     fprintf(stdout, "Perturbing Design.\n");
-    perturbation.zernike_coeff = static_cast<double*>(calloc(NZERN*npertsurf, sizeof(double)));
+    perturbation.zernike_coeff = static_cast<double*>(calloc(NTERM*nsurf, sizeof(double)));
     // chuck's old model: 0.82312e-3*pow(zv, -1.2447)
 
-    for (long i = 0; i < npertsurf; i++) {
-        for (long j = 0; j < NZERN; j++) {
-            *(perturbation.zernike_coeff + i*NZERN + j) = izernike[i][j];
+    for (long i = 0; i < nsurf; i++) {
+        for (long j = 0; j < NTERM; j++) {
+            *(perturbation.zernike_coeff + i*NTERM + j) = izernike[i][j];
         }
     }
 
 
-    perturbation.zernikeflag = 0;
 
     perturbation.eulerPhi.reserve(nsurf + 1);
     perturbation.eulerPsi.reserve(nsurf + 1);
@@ -218,68 +215,64 @@ int Image::telSetup () {
     perturbation.decenterY.reserve(nsurf + 1);
     perturbation.defocus.reserve(nsurf + 1);
 
-    perturbation.zernike_r = static_cast<double*>(calloc(NZERN*SURFACE_POINTS, sizeof(double)));
-    perturbation.zernike_phi = static_cast<double*>(calloc(NZERN*SURFACE_POINTS, sizeof(double)));
+    double *zernike_r, *zernike_phi, *zernike_normal_r, *zernike_normal_phi;
+    double *chebyshev, *chebyshev_r, *chebyshev_phi;
+    zernike_r = static_cast<double*>(calloc(NZERN*SURFACE_POINTS, sizeof(double)));
+    zernike_phi = static_cast<double*>(calloc(NZERN*SURFACE_POINTS, sizeof(double)));
+    zernike_normal_r = static_cast<double*>(calloc(NZERN*SURFACE_POINTS, sizeof(double)));
+    zernike_normal_phi = static_cast<double*>(calloc(NZERN*SURFACE_POINTS, sizeof(double)));
+    chebyshev = static_cast<double*>(calloc(NCHEB*SURFACE_POINTS*SURFACE_POINTS, sizeof(double)));
+    chebyshev_r = static_cast<double*>(calloc(NCHEB*SURFACE_POINTS*SURFACE_POINTS, sizeof(double)));
+    chebyshev_phi = static_cast<double*>(calloc(NCHEB*SURFACE_POINTS*SURFACE_POINTS, sizeof(double)));
     perturbation.zernike_r_grid = static_cast<double*>(calloc(SURFACE_POINTS, sizeof(double)));
     perturbation.zernike_phi_grid = static_cast<double*>(calloc(SURFACE_POINTS, sizeof(double)));
-    perturbation.zernike_normal_r = static_cast<double*>(calloc(NZERN*SURFACE_POINTS, sizeof(double)));
-    perturbation.zernike_normal_phi = static_cast<double*>(calloc(NZERN*SURFACE_POINTS, sizeof(double)));
+    perturbation.zernike_summed = static_cast<double*>(calloc(nsurf*SURFACE_POINTS*SURFACE_POINTS, sizeof(double)));
+    perturbation.zernike_summed_nr_p = static_cast<double*>(calloc(nsurf*SURFACE_POINTS*SURFACE_POINTS, sizeof(double)));
+    perturbation.zernike_summed_np_r = static_cast<double*>(calloc(nsurf*SURFACE_POINTS*SURFACE_POINTS, sizeof(double)));
 
+    zernikes(zernike_r, zernike_phi, perturbation.zernike_r_grid,
+             perturbation.zernike_phi_grid, zernike_normal_r, zernike_normal_phi,
+             SURFACE_POINTS, NZERN);
+    chebyshevs (perturbation.zernike_r_grid, perturbation.zernike_phi_grid,
+                chebyshev, chebyshev_r, chebyshev_phi, SURFACE_POINTS, NCHEB);
 
-    if (pertType == "zern") {
-        zernikes(perturbation.zernike_r, perturbation.zernike_phi, perturbation.zernike_r_grid,
-                 perturbation.zernike_phi_grid, perturbation.zernike_normal_r, perturbation.zernike_normal_phi,
-                 SURFACE_POINTS, NZERN);
-    } else if (pertType == "chebyshev") {
-        //will change this later
-        zernikes(perturbation.zernike_r, perturbation.zernike_phi, perturbation.zernike_r_grid,
-                 perturbation.zernike_phi_grid, perturbation.zernike_normal_r, perturbation.zernike_normal_phi,
-                 SURFACE_POINTS, NZERN);
-    }
-    perturbation.zernike_summed = static_cast<double*>(calloc(npertsurf*SURFACE_POINTS*SURFACE_POINTS, sizeof(double)));
-    perturbation.zernike_summed_nr_p = static_cast<double*>(calloc(npertsurf*SURFACE_POINTS*SURFACE_POINTS, sizeof(double)));
-    perturbation.zernike_summed_np_r = static_cast<double*>(calloc(npertsurf*SURFACE_POINTS*SURFACE_POINTS, sizeof(double)));
-
-    for (long j = 0; j < SURFACE_POINTS; j++) {
-        for (long l = 0; l < SURFACE_POINTS; l++) {
-            for (long k = 0; k < npertsurf; k++) {
-                *(perturbation.zernike_summed + k*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j) = 0;
-                for (long i = 0; i < NZERN; i++) {
-                    *(perturbation.zernike_summed + k*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j) +=
-                        *(perturbation.zernike_coeff + k*NZERN + i)*(*(perturbation.zernike_r + i*SURFACE_POINTS + j))*
-                        (*(perturbation.zernike_phi + i*SURFACE_POINTS + l));
-                }
-
-            }
-        }
-    }
-
-    for (long j = 0; j < SURFACE_POINTS; j++) {
-        for (long l = 0; l < SURFACE_POINTS; l++) {
-            for (long k = 0; k < npertsurf; k++) {
-                *(perturbation.zernike_summed_nr_p + k*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j) = 0;
-                for (long i = 0; i < NZERN; i++) {
-                    *(perturbation.zernike_summed_nr_p + k*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j) +=
-                        *(perturbation.zernike_coeff + k*NZERN + i)*(*(perturbation.zernike_normal_r + i*SURFACE_POINTS + j))*
-                        (*(perturbation.zernike_phi + i*SURFACE_POINTS + l));
+    for (long k=0;k<nsurf;k++) {
+        if (pertType[k] == "zern") {
+            for (long j = 0; j < SURFACE_POINTS; j++) {
+                for (long l = 0; l < SURFACE_POINTS; l++) {
+                    *(perturbation.zernike_summed + k*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j) = 0;
+                    *(perturbation.zernike_summed_nr_p + k*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j) = 0;
+                    *(perturbation.zernike_summed_np_r + k*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j) = 0;
+                    for (long m = 0; m < NZERN; m++) {
+                        *(perturbation.zernike_summed + k*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j) +=
+                            *(perturbation.zernike_coeff + k*NTERM + m)*(*(zernike_r + m*SURFACE_POINTS + j))*
+                            (*(zernike_phi + m*SURFACE_POINTS + l));
+                        *(perturbation.zernike_summed_nr_p + k*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j) +=
+                            *(perturbation.zernike_coeff + k*NTERM + m)*(*(zernike_normal_r + m*SURFACE_POINTS + j))*
+                            (*(zernike_phi + m*SURFACE_POINTS + l));
+                        *(perturbation.zernike_summed_np_r + k*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j) +=
+                            *(perturbation.zernike_coeff + k*NTERM + m)*(*(zernike_r + m*SURFACE_POINTS + j))*
+                            (*(zernike_normal_phi + m*SURFACE_POINTS + l));
+                    }
                 }
             }
-        }
-    }
-
-    for (long j = 0; j < SURFACE_POINTS; j++) {
-        for (long l = 0; l < SURFACE_POINTS; l++) {
-            for (long k = 0; k < npertsurf; k++) {
-                *(perturbation.zernike_summed_np_r + k*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j) = 0;
-                for (long i = 0; i < NZERN; i++) {
-                    *(perturbation.zernike_summed_np_r + k*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j) +=
-                        *(perturbation.zernike_coeff + k*NZERN + i)*(*(perturbation.zernike_r + i*SURFACE_POINTS + j))*
-                        (*(perturbation.zernike_normal_phi + i*SURFACE_POINTS + l));
+        } else if (pertType[k] == "chebyshev") {
+            for (long j = 0; j < SURFACE_POINTS; j++) {
+                for (long l = 0; l < SURFACE_POINTS; l++) {
+                    long idx = k*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j;
+                    perturbation.zernike_summed[idx] = 0;
+                    perturbation.zernike_summed_nr_p[idx] = 0;
+                    perturbation.zernike_summed_np_r[idx] = 0;
+                    for (long m = 0; m < NCHEB; m++) {
+                        long idxi = m*SURFACE_POINTS*SURFACE_POINTS + l*SURFACE_POINTS + j;
+                        perturbation.zernike_summed[idx] += perturbation.zernike_coeff[k*NTERM + m]*chebyshev[idxi];
+                        perturbation.zernike_summed_nr_p[idx] += perturbation.zernike_coeff[k*NTERM + m]*chebyshev_r[idxi];
+                        perturbation.zernike_summed_np_r[idx] += perturbation.zernike_coeff[k*NTERM + m]*chebyshev_phi[idxi];
+                    }
                 }
             }
         }
     }
-
 
     perturbation.rotationmatrix = static_cast<double*>(calloc((nsurf + 1)*3*3, sizeof(double)));
     perturbation.inverserotationmatrix = static_cast<double*>(calloc((nsurf + 1)*3*3, sizeof(double)));
@@ -331,24 +324,24 @@ int Image::telSetup () {
     size_t nNear=4;
     // int degree=1;
     int leafSize=10;
-    for (long i=0;i<nsurf;i++) {
-        if (feaflag[i]==1) {
-            long k=surface.surfacepert[i];
+    for (long k=0;k<nsurf;k++) {
+        if (feaflag[k]==1) {
+            std::cout<<"loading "<<feafile[k]<<std::endl;
             std::vector<double> ix(SURFACE_POINTS*SURFACE_POINTS), iy(SURFACE_POINTS*SURFACE_POINTS);
             for (long j=0;j<SURFACE_POINTS;j++) {
                 for (long l=0;l<SURFACE_POINTS;l++) {
-                    ix[l*SURFACE_POINTS+j]=surface.rmax[i]*perturbation.zernike_r_grid[j]*cos(perturbation.zernike_phi_grid[l]);
-                    iy[l*SURFACE_POINTS+j]=surface.rmax[i]*perturbation.zernike_r_grid[j]*sin(perturbation.zernike_phi_grid[l]);
+                    ix[l*SURFACE_POINTS+j]=surface.rmax[k]*perturbation.zernike_r_grid[j]*cos(perturbation.zernike_phi_grid[l]);
+                    iy[l*SURFACE_POINTS+j]=surface.rmax[k]*perturbation.zernike_r_grid[j]*sin(perturbation.zernike_phi_grid[l]);
                 }
             }
-            Fea feaTree(feafile[i],leafSize,surface,i);
+            Fea feaTree(feafile[k],leafSize,surface,k);
             feaTree.knnQueryFitDegree1(ix, iy, &perturbation.zernike_summed[k*SURFACE_POINTS*SURFACE_POINTS],
                     &perturbation.zernike_summed_nr_p[k*SURFACE_POINTS*SURFACE_POINTS],
                     &perturbation.zernike_summed_np_r[k*SURFACE_POINTS*SURFACE_POINTS],nNear);
             //feaTree.knnQueryFit(ix, iy, &perturbation.zernike_summed[k*SURFACE_POINTS*SURFACE_POINTS],
             //        &perturbation.zernike_summed_nr_p[k*SURFACE_POINTS*SURFACE_POINTS],
             //        &perturbation.zernike_summed_np_r[k*SURFACE_POINTS*SURFACE_POINTS],nNear, degree);
-            feaTree.getTransformation(perturbation,i);
+            feaTree.getTransformation(perturbation,k);
 
         }
     }

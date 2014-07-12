@@ -44,7 +44,6 @@ class Surface {
 
     int* surfacecoating;
     int* surfacetype;
-    int* surfacepert;
     int* surfacemed;
 
     void setup(long surfaceTotal, long points);

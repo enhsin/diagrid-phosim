@@ -23,9 +23,14 @@ def writeSubmit(self, job, jobName, fid='none', ckpt=0):
     submitfile.write('initialdir = %s\n' % self.workDir)
     submitfile.write('Universe = %s\n' % universe)
     submitfile.write('Input = %s.pars\n' % jobName)
-    submitfile.write('Log = logs/log_%s.log\n' %jobName)
-    submitfile.write('Output = output/out_%s.out\n' %jobName)
-    submitfile.write('Error = errors/error_%s.error\n' %jobName)
+    if job == 'raytrace' or job == 'e2adc':
+        submitfile.write('Log = logs/log_%s.log\n' % fid)
+        submitfile.write('Output = output/out_%s.out\n' % fid)
+        submitfile.write('Error = errors/error_%s.error\n' % fid)
+    else:
+        submitfile.write('Log = logs/log_%s.log\n' %jobName)
+        submitfile.write('Output = output/out_%s.out\n' %jobName)
+        submitfile.write('Error = errors/error_%s.error\n' %jobName)
     if universe == 'vanilla':
         submitfile.write('periodic_release=true\n')
         submitfile.write('should_transfer_files = YES\n')
@@ -37,13 +42,13 @@ def writeSubmit(self, job, jobName, fid='none', ckpt=0):
     instrument=self.instrDir.split("/")[-1]
     if job == 'raytrace':
         submitfile.write('transfer_input_files = \\\n')
-        submitfile.write('cloudscreen_%s_1.fits, \\\n' % self.observationID)
-        submitfile.write('cloudscreen_%s_2.fits, \\\n' % self.observationID)
-        submitfile.write('airglowscreen_%s.fits, \\\n' % self.observationID)
+        submitfile.write('cloudscreen_%s_1.fits.gz, \\\n' % self.observationID)
+        submitfile.write('cloudscreen_%s_2.fits.gz, \\\n' % self.observationID)
+        submitfile.write('airglowscreen_%s.fits.gz, \\\n' % self.observationID)
         for layer in range(7):
              for f in ['coarsep','coarsex','coarsey','fineh','finep',
                       'largep','largex','largey','mediumh','mediump','mediumx','mediumy']:
-                 submitfile.write('atmospherescreen_%s_%d_%s.fits, \\\n' % (self.observationID,layer,f))
+                 submitfile.write('atmospherescreen_%s_%d_%s.fits.gz, \\\n' % (self.observationID,layer,f))
         submitfile.write('%s/version, \\\n' % self.binDir)
         for f in ['m1_protAl_Ideal','m2_protAl_Ideal','m3_protAl_Ideal','silica_dispersion','lenses',
                   'detectorar','focalplanelayout','silicon','location','central_wavelengths','spider','tracking']:
@@ -60,8 +65,8 @@ def writeSubmit(self, job, jobName, fid='none', ckpt=0):
         submitfile.write('tracking_%s.pars' % self.observationID)
 
         if ckpt>0:
-            submitfile.write(', %s_e_%s_ckptdt.fits' % (instrument,fid))
-            submitfile.write(', %s_e_%s_ckptfp.fits' % (instrument,fid))
+            submitfile.write(', %s_e_%s_ckptdt.fits.gz' % (instrument,fid))
+            submitfile.write(', %s_e_%s_ckptfp.fits.gz' % (instrument,fid))
 
     else:
         if job == 'trim':
@@ -95,11 +100,16 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
         self.dagfile.write('JOB raytrace_%s %s/raytrace_%s.submit\n' % (fidckpt,self.workDir,fidckpt))
         self.dagfile.write('RETRY raytrace_%s 3\n' % (fidckpt))
         if ckpt==0:
-            self.dagfile.write('SCRIPT PRE raytrace_%s_0 %s/condor/chip preraytrace %s %s\n' %
-                          (fid,self.phosimDir,observationID+'_'+str(tc),self.workDir))
             self.dagfile.write('PARENT trim_%s_%d CHILD raytrace_%s_0\n' % (observationID,tc,fid))
         else:
             self.dagfile.write('PARENT raytrace_%s_%d CHILD raytrace_%s\n' % (fid,ckpt-1,fidckpt))
+
+        if ckpt==checkpoint:
+            if run_e2adc:
+                self.dagfile.write('SCRIPT POST raytrace_%s %s/condor/chip lastraytracecleanup %s %d %s\n' % (fidckpt,self.phosimDir,fid,ckpt,self.workDir))
+        else:
+            self.dagfile.write('SCRIPT POST raytrace_%s %s/condor/chip raytracecleanup %s %d %s\n' % (fidckpt,self.phosimDir,fid,ckpt,self.workDir))
+
         writeSubmit(self,'raytrace','raytrace_'+fidckpt,fid,ckpt)
         pfile=open('raytrace_'+fidckpt+'.pars','w')
         pfile.write(open('raytrace_'+fid+'.pars').read())
@@ -109,14 +119,14 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
     if run_e2adc:
         self.dagfile.write('JOB e2adc_%s %s/e2adc_%s.submit\n' % (fid,self.workDir,fid))
         self.dagfile.write('RETRY e2adc_%s 3\n' % fid)
-        self.dagfile.write('SCRIPT PRE e2adc_%s %s/condor/chip pree2adc %s %s\n' % (fid,self.phosimDir,fid,self.workDir))
         self.dagfile.write('SCRIPT POST e2adc_%s %s/condor/chip poste2adc %s %s %s %s %s %s %s\n' %
                       (fid,self.phosimDir,observationID,self.filt,cid,eid,self.outputDir,self.instrDir,self.workDir))
         self.dagfile.write('PARENT raytrace_%s_%d CHILD e2adc_%s\n' % (fid,checkpoint,fid))
         writeSubmit(self,'e2adc','e2adc_'+fid,fid)
     else:
-        self.dagfile.write('SCRIPT POST raytrace_%s_%d %s/condor/chip postraytrace %s %s %s %s %s %s\n' %
-                      (fid,checkpoint,self.phosimDir,observationID,self.filt,cid,eid,self.outputDir,self.workDir))
+        self.dagfile.write('SCRIPT POST raytrace_%s_%d %s/condor/chip postraytrace %s %s %s %s %s %s %d\n' %
+                      (fid,checkpoint,self.phosimDir,observationID,self.filt,cid,eid,self.outputDir,self.workDir,checkpoint))
+    os.remove('raytrace_'+fid+'.pars')
 
 def submitDag(self):
     self.dagfile.close()

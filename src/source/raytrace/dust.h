@@ -24,9 +24,9 @@ class Dust {
     double *wavelengthGrid;
 
     void setup ();
-    double calzetti (double wavelength, double A_v, double R_v);
+    double calzetti (double wavelength, double av, double rv);
     double calzettiSetup(double l);
-    double ccm (double wavelength, double A_v, double R_v);
+    double ccm (double wavelength, double av, double rv);
     void ccmSetup(double l, double *a, double *b);
 
 };

@@ -159,7 +159,7 @@ void Image::writeCheckpoint() {
     }
 
     status = 0;
-    std::string filename = "!"+outputdir+"/"+outputfilename+"_ckptdt.fits";
+    std::string filename = "!"+outputdir+"/"+outputfilename+"_ckptdt.fits.gz";
     fits_create_file(&faptr, filename.c_str(), &status);
     naxes[0] = 1; naxes[1] = 1;
     fits_create_img(faptr, DOUBLE_IMG, 2, naxes, &status);
@@ -173,7 +173,7 @@ void Image::writeCheckpoint() {
 
     free(tempDynamicTransmission);
 
-    filename = "!"+outputdir+"/"+outputfilename+"_ckptfp.fits";
+    filename = "!"+outputdir+"/"+outputfilename+"_ckptfp.fits.gz";
     fits_create_file(&faptr, filename.c_str(), &status);
     naxes[0] = 1; naxes[1] = 1;
     fits_create_img(faptr, FLOAT_IMG, 2, naxes, &status);
@@ -199,7 +199,7 @@ void Image::readCheckpoint() {
 
     tempDynamicTransmission = (double*)calloc((natmospherefile*2+nsurf*2+2)*(901), sizeof(double));
 
-    std::string filename = outputdir+"/"+outputfilename+"_ckptdt.fits";
+    std::string filename = outputdir+"/"+outputfilename+"_ckptdt.fits.gz";
     status = 0;
     if (fits_open_file(&faptr, filename.c_str(), READONLY, &status)) {printf("Error opening %s\n", filename.c_str()); exit(1);}
     fits_read_keys_lng(faptr, (char*)"NAXIS", 1, 2, naxes, &nfound, &status);
@@ -218,7 +218,7 @@ void Image::readCheckpoint() {
     free(tempDynamicTransmission);
 
 
-    filename = outputdir+"/"+outputfilename+"_ckptfp.fits";
+    filename = outputdir+"/"+outputfilename+"_ckptfp.fits.gz";
     status = 0;
     if (fits_open_file(&faptr, filename.c_str(), READONLY, &status)) {printf("Error opening %s\n", filename.c_str()); exit(1);}
     fits_read_keys_lng(faptr, (char*)"NAXIS", 1, 2, naxes, &nfound, &status);

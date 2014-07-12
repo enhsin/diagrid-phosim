@@ -21,10 +21,7 @@ using readtext::readText;
 
 int Image::atmSetup () {
 
-    long i,j;
-    char tempstring[4095];
-    int status;
-    long layer;
+    char tempstring[4096];
     std::string dir;
 
     if (flatdir==0) dir=datadir+"/atmosphere";
@@ -63,11 +60,11 @@ int Image::atmSetup () {
     dust.setup();
     filterTruncateSources();
     totalnorm=0.0;
-    for (i=0;i<nsource;i++) totalnorm+=sources.norm[i];
+    for (long i = 0; i < nsource; i++) totalnorm += sources.norm[i];
 
 
     // ATMOSPHERIC SETUP
-    for (i=0;i<natmospherefile;i++) {
+    for (long i = 0; i < natmospherefile; i++) {
         seefactor[i] = pow(1/cos(zenith),0.6)*seefactor[i];
     }
 
@@ -82,7 +79,7 @@ int Image::atmSetup () {
     fprintf(stdout,"Creating Air.\n");
     air.opacitySetup(zenith,height,groundlevel,raynorm,o2norm,h2onorm,o3norm,aerosoltau,aerosolindex,natmospherefile,dir,&airmass);
 
-    // ATMOSPHERIC TURBULENCE
+    // Atmospheric Turbulence & Clouds
     fprintf(stdout,"Generating Turbulence.\n");
     screen.seex_large=new float[natmospherefile*SCREEN_SIZE*SCREEN_SIZE]();
     screen.seey_large=new float[natmospherefile*SCREEN_SIZE*SCREEN_SIZE]();
@@ -107,290 +104,43 @@ int Image::atmSetup () {
     screen.see_norm=new float[natmospherefile]();
     screen.phase_norm=new float[natmospherefile]();
 
+    for (long layer = 0; layer < natmospherefile; layer++) {
 
-    for (layer = 0; layer < natmospherefile; layer++) {
-
-
-        if (cloudvary[layer]!=0 || cloudmean[layer]!=0) {
+        if (cloudvary[layer] != 0 || cloudmean[layer] != 0) {
             screen.cloud[layer]=(float*)calloc(SCREEN_SIZE*SCREEN_SIZE,sizeof(float));
+            sprintf(tempstring,"%s.fits.gz",cloudfile[layer].c_str());
+            screen.readScreen(-1,screen.cloud[layer],tempstring);
+         }
 
-            sprintf(tempstring,"%s.fits",cloudfile[layer].c_str());
-            {
-                char *ffptr;
-                fitsfile *faptr;
-                long naxes[2];
-                int nfound;
-                int anynull;
-                float nullval;
+        sprintf(tempstring, "%s_largep.fits.gz", atmospherefile[layer].c_str());
+        screen.phase_norm[layer] = screen.readScreen(9, screen.phase_large+layer*SCREEN_SIZE*SCREEN_SIZE, tempstring);
+        sprintf(tempstring, "%s_coarsep.fits.gz", atmospherefile[layer].c_str());
+        screen.phase_norm[layer] = screen.readScreen(9, screen.phase_coarse+layer*SCREEN_SIZE*SCREEN_SIZE, tempstring);
+        sprintf(tempstring, "%s_mediump.fits.gz", atmospherefile[layer].c_str());
+        screen.phase_norm[layer] = screen.readScreen(9, screen.phase_medium+layer*SCREEN_SIZE*SCREEN_SIZE, tempstring);
+        sprintf(tempstring, "%s_finep.fits.gz", atmospherefile[layer].c_str());
+        screen.phase_norm[layer] = screen.readScreen(9, screen.phase_fine+layer*SCREEN_SIZE*SCREEN_SIZE, tempstring);
 
-                ffptr=tempstring;
-                status=0;
-                if (fits_open_file(&faptr,ffptr,READONLY,&status)) { printf("Error opening %s\n",ffptr); exit(1);}
-                fits_read_keys_lng(faptr,(char*)"NAXIS",1,2,naxes,&nfound,&status);
-                fits_read_img(faptr,TFLOAT,1,naxes[0]*naxes[1],&nullval,screen.cloud[layer],&anynull,&status);
-                fits_close_file(faptr,&status);
-            }
+        sprintf(tempstring, "%s_mediumh.fits.gz", atmospherefile[layer].c_str());
+        screen.phase_norm[layer] = screen.readScreen(9, screen.phaseh_medium+layer*SCREEN_SIZE*SCREEN_SIZE, tempstring);
+        sprintf(tempstring, "%s_fineh.fits.gz", atmospherefile[layer].c_str());
+        screen.phase_norm[layer] = screen.readScreen(9, screen.phaseh_fine+layer*SCREEN_SIZE*SCREEN_SIZE, tempstring);
 
-        }
+        sprintf(tempstring, "%s_largex.fits.gz", atmospherefile[layer].c_str());
+        screen.see_norm[layer] = screen.readScreen(9, screen.seex_large+layer*SCREEN_SIZE*SCREEN_SIZE, tempstring);
+        sprintf(tempstring, "%s_largey.fits.gz", atmospherefile[layer].c_str());
+        screen.see_norm[layer] = screen.readScreen(9, screen.seey_large+layer*SCREEN_SIZE*SCREEN_SIZE, tempstring);
+        sprintf(tempstring, "%s_coarsex.fits.gz", atmospherefile[layer].c_str());
+        screen.see_norm[layer] = screen.readScreen(9, screen.seex_coarse+layer*SCREEN_SIZE*SCREEN_SIZE, tempstring);
+        sprintf(tempstring, "%s_coarsey.fits.gz", atmospherefile[layer].c_str());
+        screen.see_norm[layer] = screen.readScreen(9, screen.seey_coarse+layer*SCREEN_SIZE*SCREEN_SIZE, tempstring);
+        sprintf(tempstring, "%s_mediumx.fits.gz", atmospherefile[layer].c_str());
+        screen.see_norm[layer] = screen.readScreen(9, screen.seex_medium+layer*SCREEN_SIZE*SCREEN_SIZE, tempstring);
+        sprintf(tempstring, "%s_mediumy.fits.gz", atmospherefile[layer].c_str());
+        screen.see_norm[layer] = screen.readScreen(9, screen.seey_medium+layer*SCREEN_SIZE*SCREEN_SIZE, tempstring);
 
-        sprintf(tempstring,"%s_largep.fits",atmospherefile[layer].c_str());
-        {
-            char *ffptr;
-            fitsfile *faptr;
-            long naxes[2];
-            int nfound;
-            int anynull;
-            float nullval;
-            int keynum;
-            char keyname[4096];
-            char comment[4096];
-            char value[4096];
-
-            ffptr=tempstring;
-            status=0;
-            if (fits_open_file(&faptr,ffptr,READONLY,&status)) { printf("Error opening %s\n",ffptr); exit(1); }
-            fits_read_keys_lng(faptr,(char*)"NAXIS",1,2,naxes,&nfound,&status);
-            keynum=9;
-            fits_read_keyn(faptr,keynum,keyname,value,comment,&status);
-            screen.phase_norm[layer]=atof(value);
-            fits_read_img(faptr,TFLOAT,1,naxes[0]*naxes[1],&nullval,screen.phase_large+layer*SCREEN_SIZE*SCREEN_SIZE,&anynull,&status);
-            fits_close_file(faptr,&status);
-        }
-        sprintf(tempstring,"%s_coarsep.fits",atmospherefile[layer].c_str());
-        {
-            char *ffptr;
-            fitsfile *faptr;
-            long naxes[2];
-            int nfound;
-            int anynull;
-            float nullval;
-            int keynum;
-            char keyname[4096];
-            char comment[4096];
-            char value[4096];
-
-            ffptr=tempstring;
-            status=0;
-            if (fits_open_file(&faptr,ffptr,READONLY,&status)) { printf("Error opening %s\n",ffptr); exit(1); }
-            fits_read_keys_lng(faptr,(char*)"NAXIS",1,2,naxes,&nfound,&status);
-            keynum=9;
-            fits_read_keyn(faptr,keynum,keyname,value,comment,&status);
-            screen.phase_norm[layer]=atof(value);
-            fits_read_img(faptr,TFLOAT,1,naxes[0]*naxes[1],&nullval,screen.phase_coarse+layer*SCREEN_SIZE*SCREEN_SIZE,&anynull,&status);
-            fits_close_file(faptr,&status);
-        }
-        sprintf(tempstring,"%s_mediump.fits",atmospherefile[layer].c_str());
-        {
-            char *ffptr;
-            fitsfile *faptr;
-            long naxes[2];
-            int nfound;
-            int anynull;
-            float nullval;
-            int keynum;
-            char keyname[4096];
-            char comment[4096];
-            char value[4096];
-
-            ffptr=tempstring;
-            status=0;
-            if (fits_open_file(&faptr,ffptr,READONLY,&status)) { printf("Error opening %s\n",ffptr); exit(1); }
-            fits_read_keys_lng(faptr,(char*)"NAXIS",1,2,naxes,&nfound,&status);
-            keynum=9;
-            fits_read_keyn(faptr,keynum,keyname,value,comment,&status);
-            screen.phase_norm[layer]=atof(value);
-            fits_read_img(faptr,TFLOAT,1,naxes[0]*naxes[1],&nullval,screen.phase_medium+layer*SCREEN_SIZE*SCREEN_SIZE,&anynull,&status);
-            fits_close_file(faptr,&status);
-        }
-        sprintf(tempstring,"%s_finep.fits",atmospherefile[layer].c_str());
-        {
-            char *ffptr;
-            fitsfile *faptr;
-            long naxes[2];
-            int nfound;
-            int anynull;
-            float nullval;
-            int keynum;
-            char keyname[4096];
-            char comment[4096];
-            char value[4096];
-
-            ffptr=tempstring;
-            status=0;
-            if (fits_open_file(&faptr,ffptr,READONLY,&status)) { printf("Error opening %s\n",ffptr); exit(1); }
-            fits_read_keys_lng(faptr,(char*)"NAXIS",1,2,naxes,&nfound,&status);
-            keynum=9;
-            fits_read_keyn(faptr,keynum,keyname,value,comment,&status);
-            screen.phase_norm[layer]=atof(value);
-            fits_read_img(faptr,TFLOAT,1,naxes[0]*naxes[1],&nullval,screen.phase_fine+layer*SCREEN_SIZE*SCREEN_SIZE,&anynull,&status);
-            fits_close_file(faptr,&status);
-        }
-        sprintf(tempstring,"%s_mediumh.fits",atmospherefile[layer].c_str());
-        {
-            char *ffptr;
-            fitsfile *faptr;
-            long naxes[2];
-            int nfound;
-            int anynull;
-            float nullval;
-            int keynum;
-            char keyname[4096];
-            char comment[4096];
-            char value[4096];
-
-            ffptr=tempstring;
-            status=0;
-            if (fits_open_file(&faptr,ffptr,READONLY,&status)) { printf("Error opening %s\n",ffptr); exit(1); }
-            fits_read_keys_lng(faptr,(char*)"NAXIS",1,2,naxes,&nfound,&status);
-            keynum=9;
-            fits_read_keyn(faptr,keynum,keyname,value,comment,&status);
-            screen.phase_norm[layer]=atof(value);
-            fits_read_img(faptr,TFLOAT,1,naxes[0]*naxes[1],&nullval,screen.phaseh_medium+layer*SCREEN_SIZE*SCREEN_SIZE,&anynull,&status);
-            fits_close_file(faptr,&status);
-        }
-        sprintf(tempstring,"%s_finep.fits",atmospherefile[layer].c_str());
-        {
-            char *ffptr;
-            fitsfile *faptr;
-            long naxes[2];
-            int nfound;
-            int anynull;
-            float nullval;
-            int keynum;
-            char keyname[4096];
-            char comment[4096];
-            char value[4096];
-
-            ffptr=tempstring;
-            status=0;
-            if (fits_open_file(&faptr,ffptr,READONLY,&status)) { printf("Error opening %s\n",ffptr); exit(1); }
-            fits_read_keys_lng(faptr,(char*)"NAXIS",1,2,naxes,&nfound,&status);
-            keynum=9;
-            fits_read_keyn(faptr,keynum,keyname,value,comment,&status);
-            screen.phase_norm[layer]=atof(value);
-            fits_read_img(faptr,TFLOAT,1,naxes[0]*naxes[1],&nullval,screen.phaseh_fine+layer*SCREEN_SIZE*SCREEN_SIZE,&anynull,&status);
-            fits_close_file(faptr,&status);
-        }
-
-
-        sprintf(tempstring,"%s_largex.fits",atmospherefile[layer].c_str());
-        {
-            char *ffptr;
-            fitsfile *faptr;
-            long naxes[2];
-            int nfound;
-            int anynull;
-            float nullval;
-            int keynum;
-            char keyname[4096];
-            char comment[4096];
-            char value[4096];
-
-            ffptr=tempstring;
-            status=0;
-            if (fits_open_file(&faptr,ffptr,READONLY,&status)) {printf("Error opening %s\n",ffptr); exit(1);}
-            fits_read_keys_lng(faptr,(char*)"NAXIS",1,2,naxes,&nfound,&status);
-            keynum=9;
-            fits_read_keyn(faptr,keynum,keyname,value,comment,&status);
-            screen.see_norm[layer]=atof(value);
-            fits_read_img(faptr,TFLOAT,1,naxes[0]*naxes[1],&nullval,screen.seex_large+layer*SCREEN_SIZE*SCREEN_SIZE,&anynull,&status);
-            fits_close_file(faptr,&status);
-        }
-        sprintf(tempstring,"%s_largey.fits",atmospherefile[layer].c_str());
-        {
-            char *ffptr;
-            fitsfile *faptr;
-            long naxes[2];
-            int nfound;
-            int anynull;
-            float nullval;
-
-            ffptr=tempstring;
-            status=0;
-            if (fits_open_file(&faptr,ffptr,READONLY,&status)) { printf("Error opening %s\n",ffptr); exit(1);}
-            fits_read_keys_lng(faptr,(char*)"NAXIS",1,2,naxes,&nfound,&status);
-            fits_read_img(faptr,TFLOAT,1,naxes[0]*naxes[1],&nullval,screen.seey_large+layer*SCREEN_SIZE*SCREEN_SIZE,&anynull,&status);
-            fits_close_file(faptr,&status);
-        }
-
-        sprintf(tempstring,"%s_coarsex.fits",atmospherefile[layer].c_str());
-        {
-            char *ffptr;
-            fitsfile *faptr;
-            long naxes[2];
-            int nfound;
-            int anynull;
-            float nullval;
-            int keynum;
-            char keyname[4096];
-            char comment[4096];
-            char value[4096];
-
-            ffptr=tempstring;
-            status=0;
-            if (fits_open_file(&faptr,ffptr,READONLY,&status)) {printf("Error opening %s\n",ffptr); exit(1);}
-            fits_read_keys_lng(faptr,(char*)"NAXIS",1,2,naxes,&nfound,&status);
-            keynum=9;
-            fits_read_keyn(faptr,keynum,keyname,value,comment,&status);
-            screen.see_norm[layer]=atof(value);
-            fits_read_img(faptr,TFLOAT,1,naxes[0]*naxes[1],&nullval,screen.seex_coarse+layer*SCREEN_SIZE*SCREEN_SIZE,&anynull,&status);
-            fits_close_file(faptr,&status);
-        }
-        sprintf(tempstring,"%s_coarsey.fits",atmospherefile[layer].c_str());
-        {
-            char *ffptr;
-            fitsfile *faptr;
-            long naxes[2];
-            int nfound;
-            int anynull;
-            float nullval;
-
-            ffptr=tempstring;
-            status=0;
-            if (fits_open_file(&faptr,ffptr,READONLY,&status)) { printf("Error opening %s\n",ffptr); exit(1);}
-            fits_read_keys_lng(faptr,(char*)"NAXIS",1,2,naxes,&nfound,&status);
-            fits_read_img(faptr,TFLOAT,1,naxes[0]*naxes[1],&nullval,screen.seey_coarse+layer*SCREEN_SIZE*SCREEN_SIZE,&anynull,&status);
-            fits_close_file(faptr,&status);
-        }
-
-        sprintf(tempstring,"%s_mediumx.fits",atmospherefile[layer].c_str());
-        {
-            char *ffptr;
-            fitsfile *faptr;
-            long naxes[2];
-            int nfound;
-            int anynull;
-            float nullval;
-
-            ffptr=tempstring;
-            status=0;
-            if (fits_open_file(&faptr,ffptr,READONLY,&status)) {printf("Error opening %s\n",ffptr); exit(1);}
-            fits_read_keys_lng(faptr,(char*)"NAXIS",1,2,naxes,&nfound,&status);
-            fits_read_img(faptr,TFLOAT,1,naxes[0]*naxes[1],&nullval,screen.seex_medium+layer*SCREEN_SIZE*SCREEN_SIZE,&anynull,&status);
-            fits_close_file(faptr,&status);
-        }
-
-        sprintf(tempstring,"%s_mediumy.fits",atmospherefile[layer].c_str());
-        {
-            char *ffptr;
-            fitsfile *faptr;
-            long naxes[2];
-            int nfound;
-            int anynull;
-            float nullval;
-
-            ffptr=tempstring;
-            status=0;
-            if (fits_open_file(&faptr,ffptr,READONLY,&status)) {printf("Error opening %s\n",ffptr); exit(1);}
-            fits_read_keys_lng(faptr,(char*)"NAXIS",1,2,naxes,&nfound,&status);
-            fits_read_img(faptr,TFLOAT,1,naxes[0]*naxes[1],&nullval,screen.seey_medium+layer*SCREEN_SIZE*SCREEN_SIZE,&anynull,&status);
-            fits_close_file(faptr,&status);
-        }
-
-
-
-        for (i = 0; i < SCREEN_SIZE; i++) {
-            for (j = 0; j < SCREEN_SIZE; j++) {
+        for (long i = 0; i < SCREEN_SIZE; i++) {
+            for (long j = 0; j < SCREEN_SIZE; j++) {
                 *(screen.seex_large+layer*SCREEN_SIZE*SCREEN_SIZE+SCREEN_SIZE*i+j)=(float)
                     (*(screen.seex_large+layer*SCREEN_SIZE*SCREEN_SIZE+SCREEN_SIZE*i+j)*seefactor[layer]);
                 *(screen.seey_large+layer*SCREEN_SIZE*SCREEN_SIZE+SCREEN_SIZE*i+j)=(float)
@@ -405,9 +155,6 @@ int Image::atmSetup () {
                     (*(screen.seey_medium+layer*SCREEN_SIZE*SCREEN_SIZE+SCREEN_SIZE*i+j)*seefactor[layer]);
             }
         }
-
-
-
 
     }
 

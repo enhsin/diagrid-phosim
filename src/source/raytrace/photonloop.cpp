@@ -126,7 +126,7 @@ int Image::photonLoop () {
 
                         //   Saturation Optimization
                         if (saturation) {
-                            if (sourceSaturation>1.0 && sourceSaturationRadius>0.0 && sources.type[source]>= 3) {
+                            if (sourceSaturation > 1.0 && sourceSaturationRadius > 0.0 && sources.type[source] >= 3) {
                                 sourceOver = round(sourceSaturation);
                                 if (sourceOver > well_depth) sourceOver = well_depth;
                                 if (sourceOver < 1) sourceOver = 1;
@@ -357,7 +357,7 @@ int Image::photonLoop () {
                         if (diffraction_on == 2 && sources.type[source] !=  0) atmosphereDiffraction(&angle);
 
                         // Dome Seeing
-                        if (domeseeing > 0.0) domeSeeing(&angle);
+                        if (domeseeing > 0.0 || toypsf > 0.0) domeSeeing(&angle);
 
                         // Tracking
                         if (tracking_on) tracking(&angle, time);
@@ -400,11 +400,6 @@ int Image::photonLoop () {
                             if (newSurf>= 0 && newSurf<nsurf) {
 
                                 transform(&position, &angle, newSurf);
-                                if (surface.surfacetype[newSurf] == MIRROR || surface.surfacetype[newSurf] == DETECTOR) {
-                                    perturbation.zernikeflag = zernikemode;
-                                } else {
-                                    perturbation.zernikeflag = 0;
-                                }
                                 if (surface.surfacetype[newSurf] == DETECTOR) {
                                     transform(&position, &angle, newSurf + 1);
                                 }
@@ -684,14 +679,14 @@ int Image::photonLoop () {
         if (sourceType == 30) sprintf(tempstring, "Astrophysical m>40 ");
         if (sourceType >= 31 && sourceType < 70) sprintf(tempstring, "Astrophysical m=%2d ", 71 - sourceType);
         if (sourceType == 72) sprintf(tempstring, "Astrophysical m<0  ");
-        if (sourceCounter>0) counterCheck(&counterLog, sourceCounter, tempstring);
+        if (sourceCounter > 0) counterCheck(&counterLog, sourceCounter, tempstring);
     }
 
     // COSMIC RAYS
     if (checkpointcount == checkpointtotal) {
         detRay = 0; ray = 0;
         cosmicRays(&detRay);
-        if (detRay>0) {
+        if (detRay > 0) {
             for (long i = 0; i < detRay; i++) countGood(&counterLog, 1, &ray);
             sprintf(tempstring, "Cosmic Rays        ");
             counterCheck(&counterLog, detRay, tempstring);

@@ -17,3 +17,6 @@ double rotateInverseY(Vector *vector, double angle);
 void shift_mu (Vector *vector, double mu, double phi);
 void asphere (double *surface, double *surface_r, double *surface_normal, long numelements, double radiusofcurv, double spacing, double semidiameter, double holesemi, double conic, double third, double fourth,double fifth, double sixth, double seventh, double eighth, double ninth, double tenth);
 void zernikes  (double *zernike_r, double *zernike_phi, double *zernike_r_grid, double *zernike_phi_grid, double *zernike_normal_r, double *zernike_normal_phi, long numelements, long nzernikes);
+double chebyshevT (int n, double x);
+void chebyshevT2D (int n, double x, double y, double *t);
+void chebyshevs (double *r_grid, double *phi_grid, double *chebyshev, double *chebyshev_r, double *chebyshev_phi, long nPoint, long nTerm);

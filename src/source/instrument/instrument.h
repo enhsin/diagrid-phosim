@@ -25,6 +25,7 @@
 #include <map>
 
 #include "instrumentfiles.h"
+#include "dlsm.h"
 #include "../ancillary/phosim_parser.h"
 #include "../raytrace/rng_mwc.h"
 using namespace RandomNumbers;
@@ -32,8 +33,8 @@ using ancillary::PhosimParser;
 
 InstrumentFiles instrumentFiles;
 
-const int gDevCol=10;
+const int gDevCol = 10;
 const double kPi (3.141592653589793238462643);
-const int gTotalNumTags=28;
+const int gTotalNumTags = 27;
 
 #endif

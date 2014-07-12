@@ -85,19 +85,6 @@ int Observation::addSource (const std::string & object, int sourcetype) {
     sources.norm[nsource] = pow(10.0, ((mag + magnification + 48.6)/(-2.5)));
     sources.mag[nsource] = mag + magnification;
 
-    // untar SEDs if needed
-    if (flatdir == 1 && untarSEDs==0) {
-        std::ostringstream tarName;
-        tarName << "SEDs_" << obshistid << "_" << chipid << ".tar";
-        std::ifstream tarFile(tarName.str().c_str());
-        if (tarFile.good()) {
-            std::cout<<"Untarring "<<tarName.str()<<std::endl;
-            std::string tarCommand = "tar xf " + tarName.str();
-            system(tarCommand.c_str());
-        }
-        untarSEDs=1;
-    }
-
     oldsed = 0;
     // read SED file
     if (nsource > 0) {
@@ -115,14 +102,14 @@ int Observation::addSource (const std::string & object, int sourcetype) {
     if (sedptr == 0) {
         nreallocs = 0;
         sed_max = 4194304; // 4M elements, 32MB memory
-        sed_w = (double*)malloc((long)(sed_max*sizeof(double)));
-        sed_c = (double*)malloc((long)(sed_max*sizeof(double)));
+        sed_w = static_cast<double*>(malloc((long)(sed_max*sizeof(double))));
+        sed_c = static_cast<double*>(malloc((long)(sed_max*sizeof(double))));
     } else {
         if (sedptr > (sed_max - 25000)) {
             ++nreallocs;
             sed_max = 2*sed_max;
-            sed_w = (double*)realloc(sed_w, (long)((sed_max)*sizeof(double)));
-            sed_c = (double*)realloc(sed_c, (long)((sed_max)*sizeof(double)));
+            sed_w = static_cast<double*>(realloc(sed_w, (long)((sed_max)*sizeof(double))));
+            sed_c = static_cast<double*>(realloc(sed_c, (long)((sed_max)*sizeof(double))));
         }
     }
 
@@ -305,7 +292,7 @@ int Observation::addSource (const std::string & object, int sourcetype) {
         }
 
 
-        /* read image file */
+        // read image file
 
         if (sources.skysameas[nsource] == -1) {
             sprintf(tempstring, "%s/%s+0", imagedir.c_str(), sources.spatialname[nsource].c_str());
@@ -315,10 +302,7 @@ int Observation::addSource (const std::string & object, int sourcetype) {
 
             if (fits_open_file(&faptr, ffptr, READONLY, &status)) printf("Error opening %s\n", ffptr);
             fits_read_keys_lng(faptr, (char*)"NAXIS", 1, 2, naxes, &nfound, &status);
-            if ((tempptr[nimage] = (float*)malloc(naxes[0]*naxes[1]*sizeof(float))) == NULL) {
-                fprintf(stderr, "Can't allocate image.\n");
-                exit(1);
-            }
+            tempptr[nimage] = static_cast<float*>(malloc(naxes[0]*naxes[1]*sizeof(float)));
             naxesb[nimage][0] = naxes[1];
             naxesb[nimage][1] = naxes[0];
             fits_read_img(faptr, TFLOAT, 1, naxes[0]*naxes[1], &nullval,
@@ -444,7 +428,7 @@ int Observation::background () {
     else if (flatdir == 1) dir = ".";
 
     airglow = (float*)calloc((airglowScreenSize)*(airglowScreenSize), sizeof(float));
-    sprintf(tempstring, "airglowscreen_%ld.fits", obshistid);
+    sprintf(tempstring, "airglowscreen_%ld.fits.gz", obshistid);
     {
         char *ffptr;
         fitsfile *faptr;
@@ -500,7 +484,7 @@ int Observation::background () {
     sprintf( lunar_sedfile, "%s/lunar_sed.txt",dir.c_str());
 
     lunar_fp = fopen ( lunar_sedfile, "r" );
-    for ( i = 0; i < 1441; i++ ){
+    for (i = 0; i < 1441; i++){
         fgets( line, 200, lunar_fp );
         sscanf( line, "%f %f\n", &lunar_data[i][0], &temp );
         lunar_data[i][1] = temp * background_brightness / 3.882815E-16;
@@ -532,7 +516,7 @@ int Observation::background () {
         beta = 1.0 - alpha;
         magnitude = a[j][0] + a[j][1] * ( 265.0 - angle ) + a[j][2] * ( 265.0 - angle ) * ( 265.0 - angle );
     }
-    else if ( (angle > 106) && (angle < 254) ){
+    else if ((angle > 106) && (angle < 254)) {
         alpha = 0.0;
         beta = 1.0;
         magnitude = a[j][0] + a[j][1] * ( 11.0 ) + a[j][2] * ( 11.0 ) * ( 11.0 );
@@ -559,13 +543,13 @@ int Observation::background () {
     darksky_like_photon_count = expf(-.4 * darksky_like_magnitude * 2.30258509);
     if (darksky_like_photon_count < 0) darksky_like_photon_count = 0;
 
-    if ( (angle > 106) && (angle < 130) ) darksky_like_photon_count *= exp( 1 - 24.0 / fabs( angle - 130.0 ) );
-    if ( (angle > 230) && (angle < 254) ) darksky_like_photon_count *= exp( 1 - 24.0 / fabs( angle - 230.0 ) );
-    if ( (angle >= 130) && (angle <= 230) ) darksky_like_photon_count = 0;
+    if ((angle > 106) && (angle < 130)) darksky_like_photon_count *= exp( 1 - 24.0 / fabs( angle - 130.0 ) );
+    if ((angle > 230) && (angle < 254)) darksky_like_photon_count *= exp( 1 - 24.0 / fabs( angle - 230.0 ) );
+    if ((angle >= 130) && (angle <= 230)) darksky_like_photon_count = 0;
 
-    if ( (angle > 106) && (angle < 130) ) lunar_like_photon_count *= exp( 1 - 24.0 / fabs( angle - 130.0 ) );
-    if ( (angle > 230) && (angle < 254) ) lunar_like_photon_count *= exp( 1 - 24.0 / fabs( angle - 230.0 ) );
-    if ( (angle >= 130) && (angle <= 230) ) lunar_like_photon_count = 0;
+    if ((angle > 106) && (angle < 130)) lunar_like_photon_count *= exp( 1 - 24.0 / fabs( angle - 130.0 ) );
+    if ((angle > 230) && (angle < 254)) lunar_like_photon_count *= exp( 1 - 24.0 / fabs( angle - 230.0 ) );
+    if ((angle >= 130) && (angle <= 230)) lunar_like_photon_count = 0;
 
 
     for (diffusetype = 0; diffusetype < 3; diffusetype++){
@@ -913,7 +897,6 @@ int Observation::parser () {
 
     double altitude,  solaralt;
     int extraCommandFlag=0;
-    int allocateZernikes=0;
     nphot = 0;
     totalnorm = 0.0;
     nsedptr = 0;
@@ -948,6 +931,7 @@ int Observation::parser () {
     telescope_on = 1;
     coatingmode = 1;
     chargediffusion = 1;
+    photoelectric = 1;
     contaminationmode = 1;
     tracking_on = 1;
     detector_on = 1;
@@ -993,6 +977,7 @@ int Observation::parser () {
     pairid = 0;
     tai = 0.0;
     domeseeing = 0.1;
+    toypsf = 0.0;
     finiteDistance = 0.0;
     transtol = 0.0;
     backAlpha = 0.1;
@@ -1013,7 +998,6 @@ int Observation::parser () {
     miescatter_scat = 0.135;
     totalseeing = 0.67;
     flatdir = 0;
-    untarSEDs = 0;
     atmdebug = 0;
     large_scale = 1.0;
     coarse_scale = 1.0;
@@ -1087,6 +1071,10 @@ int Observation::parser () {
 
     /* telescope parameter arrays */
     izernike.resize(MAX_SURF);
+    pertType.resize(MAX_SURF);
+    NTERM = NZERN;
+    if ( NZERN < NCHEB ) NTERM = NCHEB;
+    for (int i = 0;i<MAX_SURF;i++) izernike[i].resize(NTERM, 0);
     body.resize(MAX_SURF);
     for (int i = 0;i<MAX_SURF;i++) body[i].resize(6, 0);
     ghost.resize(MAX_SURF, 0);
@@ -1217,19 +1205,18 @@ int Observation::parser () {
         readText::get(line, "rotationjitter", rotationjitter);
         readText::get(line, "elevationjitter", elevationjitter);
         readText::get(line, "azimuthjitter", azimuthjitter);
-        if ( allocateZernikes == 0 && (keyName == "izernike" || keyName == "ichebyshev")) {
-            if (keyName == "izernike" ) {
-                NZERN=22;
-                pertType.assign("zern");
-            } else if (keyName == "ichebyshev" ) {
-                NZERN=22;
-                pertType.assign("chebyshev");
-            }
-            for (int i = 0;i<MAX_SURF;i++) izernike[i].resize(NZERN, 0);
-            allocateZernikes=1;
+        if (keyName == "izernike" ) {
+            long surfaceIndex;
+            readText::get(line, "izernike", izernike);
+            iss >> surfaceIndex;
+            pertType[surfaceIndex].assign("zern");
         }
-        readText::get(line, "izernike", izernike);
-        readText::get(line, "ichebyshev", izernike);
+        if (keyName == "ichebyshev" ) {
+            long surfaceIndex;
+            readText::get(line, "ichebyshev", izernike);
+            iss >> surfaceIndex;
+            pertType[surfaceIndex].assign("chebyshev");
+        }
         readText::get(line, "body", body);
         readText::get(line, "natmospherefile", natmospherefile);
         readText::get(line, "atmospherefile", atmospherefile);
@@ -1262,6 +1249,7 @@ int Observation::parser () {
         readText::get(line, "aerosolindex", aerosolindex);
         readText::get(line, "lascatprob", miescatter_scat);
         readText::get(line, "domeseeing", domeseeing);
+        readText::get(line, "toypsf", toypsf);
         readText::get(line, "airglowvariation", airglowvariation);//
         readText::get(line, "totalseeing", totalseeing);//
         readText::get(line, "zenith_v", zenith_v);//
@@ -1310,7 +1298,7 @@ int Observation::parser () {
         if (readText::getKey(line, "solarzen", solarzen)) solarzen *= M_PI/180.;
         if (keyName == "clearperturbations") {
             for (int i = 0;i<MAX_SURF;i++) for (int j = 0; j < 6; j++) body[i][j] = 0.0;
-            for (int i = 0;i<MAX_SURF;i++) for (int j = 0;j < NZERN; j++) izernike[i][j] = 0.0;
+            for (int i = 0;i<MAX_SURF;i++) for (int j = 0;j < NTERM; j++) izernike[i][j] = 0.0;
         }
         if (keyName == "cleartracking") {
             rotationjitter = 0.0;
@@ -1349,13 +1337,62 @@ int Observation::parser () {
             chargesharing = 0;
             pixelerror = 0;
         }
+        if (keyName == "cleareverything") {
+            for (int i = 0;i<MAX_SURF;i++) for (int j = 0; j < 6; j++) body[i][j] = 0.0;
+            for (int i = 0;i<MAX_SURF;i++) for (int j = 0;j < NTERM; j++) izernike[i][j] = 0.0;
+            rotationjitter = 0.0;
+            elevationjitter = 0.0;
+            azimuthjitter = 0.0;
+            for (int i = 0;i<MAX_LAYER;i++) {
+                cloudmean[i] = 0.0;
+                cloudvary[i] = 0.0;
+            }
+            h2onorm = 0.0;
+            raynorm = 0.0;
+            o2norm = 0.0;
+            o3norm = 0.0;
+            aerosoltau = 0.0;
+            for (int i = 0;i<MAX_LAYER;i++) {
+                cloudmean[i] = 0.0;
+                cloudvary[i] = 0.0;
+                densitymean[i] = 0.0;
+            }
+           for (int i = 0;i<MAX_LAYER;i++) {
+                seefactor[i] = 0.0;
+                densityfluctuation[i] = 0.0;
+            }
+            domeseeing = 0.0;
+            impurityvariation = 0;
+            fieldanisotropy = 0;
+            deadlayer = 0;
+            chargesharing = 0;
+            pixelerror = 0;
+            detector_on = 0;
+            telescope_on = 0;
+            atmospheric_dispersion = 0;
+            diffraction_on = 0;
+            miescatter_scat = 0.0;
+        }
         if (keyName == "fea") {
             long surfaceIndex;
             iss >> surfaceIndex;
             iss >> feafile[surfaceIndex];
             feaflag[surfaceIndex] = 1;
         }
-
+        if (keyName == "dlsm") {
+            long surfaceIndex;
+            std::ostringstream fileName1, fileName2;
+            iss >> surfaceIndex;
+            fileName1 << "fea_"  << obshistid << "_" << surfaceIndex << ".txt";
+            feafile[surfaceIndex].assign(fileName1.str());
+            std::cout<<surfaceIndex<<" "<<feafile[surfaceIndex]<<std::endl;
+            feaflag[surfaceIndex] = 1;
+            iss >> surfaceIndex;
+            fileName2 << "fea_"  << obshistid << "_" << surfaceIndex << ".txt";
+            feafile[surfaceIndex].assign(fileName2.str());
+            std::cout<<surfaceIndex<<" "<<feafile[surfaceIndex]<<std::endl;
+            feaflag[surfaceIndex] = 1;
+        }
         if (extraCommandFlag > 1) {
             extraCommandString.push_back(line);
             extraCommandFlag++;
@@ -1375,7 +1412,6 @@ int Observation::parser () {
     if (flatdir == 1) {
         instrdir  =  ".";
         bindir  =  ".";
-        imagedir = ".";
     }
 
     focalplanefile = instrdir + "/focalplanelayout.txt";
@@ -1384,7 +1420,8 @@ int Observation::parser () {
     long pixelsx_t, pixelsy_t;
     double angle1, angle2;
     std::string grouptype;
-    focalplanePars>>centerx_t>>centery_t>>pixsize_t>>pixelsx_t>>pixelsy_t>>devtype>>devvalue>>grouptype>>chipangle>>angle1>>angle2>>decenterx>>decentery;
+    focalplanePars >> centerx_t >> centery_t >> pixsize_t >> pixelsx_t >> pixelsy_t >>
+        devtype >> devvalue >> grouptype >> chipangle >> angle1 >> angle2 >> decenterx >> decentery;
     decenterx *= 1000.0;
     decentery *= 1000.0;
     chipangle *= M_PI/180.0;
@@ -1395,8 +1432,8 @@ int Observation::parser () {
     if (pixelsy == -1) pixelsy = pixelsy_t;
     if (minx == -1) minx = 0;
     if (miny == -1) miny = 0;
-    if (maxx == -1) maxx = pixelsx-1;
-    if (maxy == -1) maxy = pixelsy-1;
+    if (maxx == -1) maxx = pixelsx - 1;
+    if (maxy == -1) maxy = pixelsy - 1;
 
     std::istringstream wavelengthPars(readText::get(instrdir + "/central_wavelengths.txt", filter));
     double wavelength_t, platescale_t;
@@ -1472,6 +1509,7 @@ int Observation::settings() {
     fprintf(stdout, "[fringing] Fringing (0=off/1=on):                          %d\n", fringeflag);
     fprintf(stdout, "[deadlayer] Dead Layer (0=off/1=on):                       %d\n", deadlayer);
     fprintf(stdout, "[chargediffusion] Charge Diffusion (0=off/1=on):           %d\n", chargediffusion);
+    fprintf(stdout, "[photoelectric] Photoelectric (0=off/1=on):                %d\n", photoelectric);
     fprintf(stdout, "[chargesharing] Charge Sharing (0=off/1=on):               %d\n", chargesharing);
     fprintf(stdout, "[pixelerror] Pixel Error (0=off/1=on):                     %d\n", pixelerror);
     fprintf(stdout, "[coatingmode] Coating Mode (0=off/1=on):                   %ld\n", coatingmode);
@@ -1525,12 +1563,12 @@ int Observation::settings() {
     fprintf(stdout, "[elevationjitter] Elevation Jitter (arcseconds):           %lf\n", elevationjitter);
     fprintf(stdout, "[azimuthjitter] Azimuthal Jitter (arcseconds):             %lf\n", azimuthjitter);
     fprintf(stdout, "[izernike optic# zernike#] Zernike amplitude:        \n");
-    for (long i = 0; i < npertsurf; i++) {
-        for (long j = 0; j < NZERN/2; j++) {
+    for (long i = 0; i < nsurf; i++) {
+        for (long j = 0; j < NTERM/2; j++) {
             printf("%lf ", izernike[i][j]);
         } printf("\n");
         printf(" ");
-        for (long j = NZERN/2; j < NZERN; j++) {
+        for (long j = NTERM/2; j < NTERM; j++) {
             printf("%lf ", izernike[i][j]);
         } printf("\n");
     }
@@ -1541,6 +1579,7 @@ int Observation::settings() {
         } printf("\n");
     }
     fprintf(stdout, "[lascatprob] Large angle scattering probability:           %lf\n", miescatter_scat);
+    fprintf(stdout, "[toypsf] Toy PSF:                                          %lf\n", toypsf);
 
     //site
     fprintf(stdout, "[domeseeing] Dome seeing:                                  %lf\n", domeseeing);
@@ -1731,7 +1770,6 @@ int Observation::header( fitsfile *faptr) {
     fits_write_key(faptr, TDOUBLE, (char*)"PRIZ18", &izernike[0][18], (char*)"Primary zernike amplitude", &status);
     fits_write_key(faptr, TDOUBLE, (char*)"PRIZ19", &izernike[0][19], (char*)"Primary zernike amplitude", &status);
     fits_write_key(faptr, TDOUBLE, (char*)"PRIZ20", &izernike[0][20], (char*)"Primary zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"PRIZ21", &izernike[0][21], (char*)"Primary zernike amplitude", &status);
 
     fits_write_key(faptr, TDOUBLE, (char*)"SECZ0", &izernike[1][0], (char*)"Secondary zernike amplitude", &status);
     fits_write_key(faptr, TDOUBLE, (char*)"SECZ1", &izernike[1][1], (char*)"Secondary zernike amplitude", &status);
@@ -1754,7 +1792,6 @@ int Observation::header( fitsfile *faptr) {
     fits_write_key(faptr, TDOUBLE, (char*)"SECZ18", &izernike[1][18], (char*)"Secondary zernike amplitude", &status);
     fits_write_key(faptr, TDOUBLE, (char*)"SECZ19", &izernike[1][19], (char*)"Secondary zernike amplitude", &status);
     fits_write_key(faptr, TDOUBLE, (char*)"SECZ20", &izernike[1][20], (char*)"Secondary zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"SECZ21", &izernike[1][21], (char*)"Secondary zernike amplitude", &status);
 
     fits_write_key(faptr, TDOUBLE, (char*)"TERZ0", &izernike[2][0], (char*)"Tertiary zernike amplitude", &status);
     fits_write_key(faptr, TDOUBLE, (char*)"TERZ1", &izernike[2][1], (char*)"Tertiary zernike amplitude", &status);
@@ -1777,30 +1814,28 @@ int Observation::header( fitsfile *faptr) {
     fits_write_key(faptr, TDOUBLE, (char*)"TERZ18", &izernike[2][18], (char*)"Tertiary zernike amplitude", &status);
     fits_write_key(faptr, TDOUBLE, (char*)"TERZ19", &izernike[2][19], (char*)"Tertiary zernike amplitude", &status);
     fits_write_key(faptr, TDOUBLE, (char*)"TERZ20", &izernike[2][20], (char*)"Tertiary zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"TERZ21", &izernike[2][21], (char*)"Tertiary zernike amplitude", &status);
 
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ0", &izernike[3][0], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ1", &izernike[3][1], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ2", &izernike[3][2], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ3", &izernike[3][3], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ4", &izernike[3][4], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ5", &izernike[3][5], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ6", &izernike[3][6], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ7", &izernike[3][7], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ8", &izernike[3][8], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ9", &izernike[3][9], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ10", &izernike[3][10], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ11", &izernike[3][11], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ12", &izernike[3][12], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ13", &izernike[3][13], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ14", &izernike[3][14], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ15", &izernike[3][15], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ16", &izernike[3][16], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ17", &izernike[3][17], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ18", &izernike[3][18], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ19", &izernike[3][19], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ20", &izernike[3][20], (char*)"Detector zernike amplitude", &status);
-    fits_write_key(faptr, TDOUBLE, (char*)"DETZ21", &izernike[3][21], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ0", &izernike[11][0], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ1", &izernike[11][1], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ2", &izernike[11][2], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ3", &izernike[11][3], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ4", &izernike[11][4], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ5", &izernike[11][5], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ6", &izernike[11][6], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ7", &izernike[11][7], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ8", &izernike[11][8], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ9", &izernike[11][9], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ10", &izernike[11][10], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ11", &izernike[11][11], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ12", &izernike[11][12], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ13", &izernike[11][13], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ14", &izernike[11][14], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ15", &izernike[11][15], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ16", &izernike[11][16], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ17", &izernike[11][17], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ18", &izernike[11][18], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ19", &izernike[11][19], (char*)"Detector zernike amplitude", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"DETZ20", &izernike[11][20], (char*)"Detector zernike amplitude", &status);
 
     fits_write_key(faptr, TDOUBLE, (char*)"BOD00", &body[0][0], (char*)"Body motion misalignment", &status);
     fits_write_key(faptr, TDOUBLE, (char*)"BOD10", &body[1][0], (char*)"Body motion misalignment", &status);
@@ -1915,6 +1950,7 @@ int Observation::header( fitsfile *faptr) {
     fits_write_key(faptr, TDOUBLE, (char*)"RELO3", &o3norm, (char*)"Relative O3 fraction", &status);
     fits_write_key(faptr, TDOUBLE, (char*)"LASCPR", &miescatter_scat, (char*)"Large angle scattering probability", &status);
     fits_write_key(faptr, TDOUBLE, (char*)"DOMESEE", &domeseeing, (char*)"Dome Seeing (arcseconds FWHM)", &status);
+    fits_write_key(faptr, TDOUBLE, (char*)"TOYPSF", &toypsf, (char*)"Toy PSF (arcseconds FWHM)", &status);
     fits_write_key(faptr, TDOUBLE, (char*)"PIXSIZE", &pixsize, (char*)"Pixel Size (microns)", &status);
     fits_write_key(faptr, TSTRING, (char*)"CHIPID", (char*)chipid.c_str(), (char*)"Chip/Amplifier ID", &status);
     fits_write_key(faptr, TLONG, (char*)"PAIRID", &pairid, (char*)"Pair ID", &status);

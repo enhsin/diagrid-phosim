@@ -385,3 +385,55 @@ void zernikes  (double *zernike_r, double *zernike_phi, double *zernike_r_grid, 
 
 
 }
+
+//Chebyshev polynomial of the first kind
+double chebyshevT (int n, double x) {
+    if (n == 0) return 1.0;
+    if (n == 1) return x;
+    return 2*x*chebyshevT(n-1,x)-chebyshevT(n-2,x);
+}
+
+//differentiation of Chebyshev polynomial of the first kind
+double chebyshevT_x (int n, double x) {
+    if (n == 0) return 0.0;
+    if (n == 1) return 1.0;
+    return 2*chebyshevT(n-1,x)+2*chebyshevT_x(n-1,x)-chebyshevT_x(n-2,x);
+}
+
+void chebyshevT2D (int n, double x, double y, double *t) {
+    int degree, d(n+1);
+    for (degree=0; degree<=n; degree++) {
+        d -= (degree+1);
+        if (d <= 0) {
+            d += degree;
+            break;
+        }
+    }
+    double tx=chebyshevT(degree-d,x);
+    double ty=chebyshevT(d,y);
+    double tx_x=chebyshevT_x(degree-d,x);
+    double ty_y=chebyshevT_x(d,y);
+    t[0]=tx*ty;
+    t[1]=tx_x*ty;
+    t[2]=tx*ty_y;
+}
+
+void chebyshevs (double *r_grid, double *phi_grid, double *chebyshev, double *chebyshev_r, double *chebyshev_phi, long nPoint, long nTerm) {
+    for (long j = 0; j < nPoint; j++) {
+        double r = r_grid[j];
+        for (long l = 0; l < nPoint; l++) {
+            double x = r*cos(phi_grid[l]);
+            double y = r*sin(phi_grid[l]);
+            for (long i = 0; i < nTerm; i++) {
+                double t[3], t_r, t_phi;
+                chebyshevT2D(i,x,y,&t[0]);
+                t_r=t[1]*x/r+t[2]*y/r;         // dz/dr = dz/dx cos(theta) + dz/dy sin(theta)
+                t_phi=r*(-t[1]*y/r+t[2]*x/r);  // dz/dtheta = r [ -dz/dx sin(theta) + dz/dy cos(theta) ]
+                chebyshev[i*nPoint*nPoint + l*nPoint + j] = t[0];
+                chebyshev_r[i*nPoint*nPoint + l*nPoint + j] = t_r;
+                chebyshev_phi[i*nPoint*nPoint + l*nPoint + j] = t_phi;
+            }
+        }
+    }
+}
+

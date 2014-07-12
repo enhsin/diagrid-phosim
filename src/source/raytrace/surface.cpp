@@ -35,7 +35,6 @@ void Surface::setup (long surfaceTotal, long points) {
     surfacemed = new int[surfaceTotal]();
     surfacecoating = new int[surfaceTotal]();
     surfacetype = new int[surfaceTotal]();
-    surfacepert = new int[surfaceTotal]();
 
     profile = new double[surfaceTotal*points]();
     radius = new double[surfaceTotal*points]();

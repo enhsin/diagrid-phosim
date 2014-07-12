@@ -25,14 +25,14 @@
 void Dust::setup () {
 
     int i;
-    double a,b;
+    double a, b;
 
-    wavelengthGrid = (double*)calloc(12000, sizeof(double));
-    aGrid = (double*)calloc(12000, sizeof(double));
-    bGrid = (double*)calloc(12000, sizeof(double));
-    kGrid = (double*)calloc(12000, sizeof(double));
-    for (i = 0;i<12000;i++) {
-        wavelengthGrid[i] = ((double)i)/10000.0;
+    wavelengthGrid = static_cast<double*>(calloc(12000, sizeof(double)));
+    aGrid = static_cast<double*>(calloc(12000, sizeof(double)));
+    bGrid = static_cast<double*>(calloc(12000, sizeof(double)));
+    kGrid = static_cast<double*>(calloc(12000, sizeof(double)));
+    for (i = 0; i < 12000; i++) {
+        wavelengthGrid[i] = (static_cast<double>(i))/10000.0;
         ccmSetup(wavelengthGrid[i], &a, &b);
         aGrid[i] = a;
         bGrid[i] = b;
@@ -42,7 +42,7 @@ void Dust::setup () {
 }
 
 
-double Dust::ccm (double wavelength, double A_v, double R_v) {
+double Dust::ccm (double wavelength, double av, double rv) {
 
     long index;
     double a, b;
@@ -51,11 +51,11 @@ double Dust::ccm (double wavelength, double A_v, double R_v) {
     index = find_linear(wavelengthGrid, 12000, wavelength, &rindex);
     a = interpolate_linear(aGrid, index, rindex);
     b = interpolate_linear(bGrid, index, rindex);
-    return pow(10.0, -0.4*A_v*(a + b/R_v));
+    return pow(10.0, -0.4*av*(a + b/rv));
 
 }
 
-double Dust::calzetti (double wavelength, double A_v, double R_v) {
+double Dust::calzetti (double wavelength, double av, double rv) {
 
     long index;
     double rindex;
@@ -63,32 +63,32 @@ double Dust::calzetti (double wavelength, double A_v, double R_v) {
 
     index = find_linear(wavelengthGrid, 12000, wavelength, &rindex);
     k = interpolate_linear(kGrid, index, rindex);
-    return pow(10.0, -0.4*A_v*(1 + k/R_v));
+    return pow(10.0, -0.4*av*(1 + k/rv));
 
 }
 
 // Cardelli, Clayton, Mathis Model
 //
 // Created 15 Jan 2010
-// I changed "A_v" to A_V for clarity.
+// I changed "av" to A_V for clarity.
 // This is the Cardelli, Clayton, Mathis 1989 ApJ, 345, 245 (CCM89) extinction curve.
 // It returns the extinction in magnitudes defined by:
 // equation1-CCM:  A(l)/A_V = a(x) + b(x)/R_V,
 // where x=1/l
-//   and A_v = V-band extinction in magnitudes.
-//   and R_V  = A_v / E(B-V), is the selective extinction.
+//   and av = V-band extinction in magnitudes.
+//   and R_V  = av / E(B-V), is the selective extinction.
 // R_V provides the shape of the extinction curve, see figs 3,4 in CCM89.
 // This is for the Milky Way extinction curve.  There is a different
 // curve for the Magellanic Clouds.
 //
 // Input: R_V = 3.1 for Diffuse ISM,  R_V=5.2 for Molecular Clouds,
-//        A_v = V-band extinction (magnitudes),
+//        av = V-band extinction (magnitudes),
 //      and l=wavelength (angstroms)
 
 void Dust::ccmSetup(double l, double *a, double *b) {
 
     double x, y;
-    double F_a, F_b;
+    double fa, fb;
 
     if (l != 0.0) {
         x = 1.f/l;
@@ -101,14 +101,14 @@ void Dust::ccmSetup(double l, double *a, double *b) {
         *b = (13.670 + 4.257*(x - 8.0) - 0.420*pow(x - 8.0, 2) + 0.374*pow(x - 8.0, 3));
     } else if (x >= 3.3 && x < 8.0) {      //  UV
         if (x >= 5.9 && x <= 8.0) {
-            F_a = (-0.04473*pow(x - 5.9, 2) - 0.009779*pow(x - 5.9, 3));
-            F_b = (0.2130*pow(x - 5.9, 2) + 0.1207*pow(x - 5.9, 3));
+            fa = (-0.04473*pow(x - 5.9, 2) - 0.009779*pow(x - 5.9, 3));
+            fb = (0.2130*pow(x - 5.9, 2) + 0.1207*pow(x - 5.9, 3));
         } else {
-            F_a = 0.0;
-            F_b = 0.0;
+            fa = 0.0;
+            fb = 0.0;
         }
-        *a = ( 1.752 - 0.316*x - 0.104 / (pow(x - 4.67, 2) + 0.341) + F_a);
-        *b = (-3.090 + 1.825*x + 1.206 / (pow(x - 4.62, 2) + 0.263) + F_b);
+        *a = ( 1.752 - 0.316*x - 0.104 / (pow(x - 4.67, 2) + 0.341) + fa);
+        *b = (-3.090 + 1.825*x + 1.206 / (pow(x - 4.62, 2) + 0.263) + fb);
     } else if (x <= 1.1) {    //  the infrared
         *a = (0.574*pow(x, 1.61));
         *b = (-0.527*pow(x, 1.61));

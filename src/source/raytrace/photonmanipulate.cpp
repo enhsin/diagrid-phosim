@@ -18,7 +18,7 @@ int Image::domeSeeing(Vector *angle) {
     double phi, r;
 
     phi = 2*M_PI*RngDouble();
-    r = domeseeing*ARCSEC/2.35482*random_gaussian();
+    r = sqrt(domeseeing*domeseeing+toypsf*toypsf)*ARCSEC/2.35482*random_gaussian();
 
     angle->x = angle->x + r*cos(phi);
     angle->y = angle->y + r*sin(phi);
@@ -770,7 +770,7 @@ void Image::interceptDerivatives(Vector *normal, Vector position, long surfaceIn
 
     r = sqrt(dx*dx+dy*dy);
     rx = find_linear(&surface.radius[SURFACE_POINTS*surfaceIndex],SURFACE_POINTS,r,&rxd);
-    if (perturbation.zernikeflag == 1) {
+    if (perturbation.zernikeflag[surfaceIndex] == 1) {
         wmin=find_linear(perturbation.zernike_r_grid, SURFACE_POINTS, r/surface.rmax[surfaceIndex], &wdmin);
         phi=atan2(dy, dx);
         if (phi < 0) phi += 2*M_PI;
@@ -778,15 +778,15 @@ void Image::interceptDerivatives(Vector *normal, Vector position, long surfaceIn
     }
 
     normal3 = interpolate_linear(&surface.normal[SURFACE_POINTS*surfaceIndex], rx, rxd);
-    if (perturbation.zernikeflag == 0) {
+    if (perturbation.zernikeflag[surfaceIndex]== 0) {
         normal->x = -normal3*dx/r;
         normal->y = -normal3*dy/r;
         normal->z = 1.0;
     } else {
         normal2 = 0;
         normalpr = normal3;
-        normal3+=(interpolate_bilinear(perturbation.zernike_summed_nr_p+surface.surfacepert[surfaceIndex]*SURFACE_POINTS*SURFACE_POINTS, SURFACE_POINTS, umin, udmin, wmin, wdmin))/surface.rmax[surfaceIndex];
-        normal2+=interpolate_bilinear(perturbation.zernike_summed_np_r+surface.surfacepert[surfaceIndex]*SURFACE_POINTS*SURFACE_POINTS, SURFACE_POINTS, umin, udmin, wmin, wdmin);
+        normal3+=(interpolate_bilinear(perturbation.zernike_summed_nr_p+surfaceIndex*SURFACE_POINTS*SURFACE_POINTS, SURFACE_POINTS, umin, udmin, wmin, wdmin))/surface.rmax[surfaceIndex];
+        normal2+=interpolate_bilinear(perturbation.zernike_summed_np_r+surfaceIndex*SURFACE_POINTS*SURFACE_POINTS, SURFACE_POINTS, umin, udmin, wmin, wdmin);
         normal->x = -normal3*dx/r + dy*normal2/(r*r);
         normal->y = -normal3*dy/r - dx*normal2/(r*r);
         normal->z = 1.0;
@@ -1210,8 +1210,10 @@ int Image::getIntercept(double x, double y, double *z, long surfaceIndex) {
     phi = atan2(dy, dx);
     if (phi < 0) phi += 2*M_PI;
     uuint = find_linear(perturbation.zernike_phi_grid, SURFACE_POINTS, phi, &uu);
-    *z += interpolate_bilinear(perturbation.zernike_summed + SURFACE_POINTS*SURFACE_POINTS*surface.surfacepert[surfaceIndex],
-                               SURFACE_POINTS, uuint, uu, wwint, ww);
+    if (perturbation.zernikeflag[surfaceIndex] == 1 ) {
+        *z += interpolate_bilinear(perturbation.zernike_summed + SURFACE_POINTS*SURFACE_POINTS*surfaceIndex,
+                                   SURFACE_POINTS, uuint, uu, wwint, ww);
+    }
 
     return(0);
 
@@ -1235,12 +1237,12 @@ int Image::getDeltaIntercept(double x, double y, double *z, long surfaceIndex) {
         (r < surface.radius[SURFACE_POINTS*surfaceIndex + 0])) miss=1;
     *z = 0.0;
 
-    if (perturbation.zernikeflag == 1) {
+    if (perturbation.zernikeflag[surfaceIndex] == 1) {
         wwint = find_linear(perturbation.zernike_r_grid, SURFACE_POINTS, r/surface.rmax[surfaceIndex], &ww);
         phi = atan2(dy, dx);
         if (phi < 0) phi += 2*M_PI;
         uuint = find_linear(perturbation.zernike_phi_grid, SURFACE_POINTS, phi, &uu);
-        *z += interpolate_bilinear(perturbation.zernike_summed + SURFACE_POINTS*SURFACE_POINTS*surface.surfacepert[surfaceIndex],
+        *z += interpolate_bilinear(perturbation.zernike_summed + SURFACE_POINTS*SURFACE_POINTS*surfaceIndex,
                                    SURFACE_POINTS, uuint, uu, wwint, ww);
     }
 
@@ -1399,7 +1401,12 @@ int Image::siliconPropagate(Vector *angle, Vector *position, double lambda, Vect
     xindex = find_linear(silicon.temperatureGrid, silicon.numTemperature, ccdtemp, &rxindex);
     double mfp = interpolate_bilinear(silicon.meanFreePath, silicon.numWavelength, xindex, rxindex, yindex, ryindex);
     double randNum;
-    double conversion = 1.0 - exp(-2*siliconthickness/1e3/fabs(angle->z)/mfp);
+    double conversion;
+    if (photoelectric == 1) {
+        conversion = 1.0 - exp(-2*siliconthickness/1e3/fabs(angle->z)/mfp);
+    } else {
+        conversion = 1.0;
+    }
     counter++;
     if (conversion > dynamicTransmission[2*natmospherefile + 2*nsurf + 1][waveIndex]) {
         dynamicTransmission[2*natmospherefile + 2*nsurf + 1][waveIndex] = conversion;

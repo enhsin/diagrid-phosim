@@ -323,14 +323,14 @@ namespace atmosphere {
         // output fits files
         fits_utils::keyword_map_t keywords;
         keywords["NORM"] = static_cast<float>(norm);
-        fits_utils::write_fits_image(largex, nx, ny, filename(name, "largex.fits"),keywords);
-        fits_utils::write_fits_image(largey, nx, ny, filename(name, "largey.fits"),keywords);
-        fits_utils::write_fits_image(coarsex, nx, ny, filename(name, "coarsex.fits"),keywords);
-        fits_utils::write_fits_image(coarsey, nx, ny, filename(name, "coarsey.fits"),keywords);
-        fits_utils::write_fits_image(mediumx, nx, ny, filename(name, "mediumx.fits"),keywords);
-        fits_utils::write_fits_image(mediumy, nx, ny, filename(name, "mediumy.fits"),keywords);
-        // fits_utils::write_fits_image(finex, nx, ny, filename(name, "finex.fits"),keywords);
-        // fits_utils::write_fits_image(finey, nx, ny, filename(name, "finey.fits"),keywords);
+        fits_utils::write_fits_image(largex, nx, ny, filename(name, "largex.fits.gz"),keywords);
+        fits_utils::write_fits_image(largey, nx, ny, filename(name, "largey.fits.gz"),keywords);
+        fits_utils::write_fits_image(coarsex, nx, ny, filename(name, "coarsex.fits.gz"),keywords);
+        fits_utils::write_fits_image(coarsey, nx, ny, filename(name, "coarsey.fits.gz"),keywords);
+        fits_utils::write_fits_image(mediumx, nx, ny, filename(name, "mediumx.fits.gz"),keywords);
+        fits_utils::write_fits_image(mediumy, nx, ny, filename(name, "mediumy.fits.gz"),keywords);
+        // fits_utils::write_fits_image(finex, nx, ny, filename(name, "finex.fits.gz"),keywords);
+        // fits_utils::write_fits_image(finey, nx, ny, filename(name, "finey.fits.gz"),keywords);
 
         dennorm=sqrt(dennorm);
         for (int ix=0; ix < nx; ix++) {
@@ -347,19 +347,19 @@ namespace atmosphere {
         }
 
         keywords["NORM"] = static_cast<float>(dennorm);
-        fits_utils::write_fits_image(largep, nx, ny, filename(name, "largep.fits"),keywords);
-        fits_utils::write_fits_image(coarsep, nx, ny, filename(name, "coarsep.fits"),keywords);
-        fits_utils::write_fits_image(mediump, nx, ny, filename(name, "mediump.fits"),keywords);
-        fits_utils::write_fits_image(mediumh, nx, ny, filename(name, "mediumh.fits"),keywords);
-        fits_utils::write_fits_image(finep, nx, ny, filename(name, "finep.fits"),keywords);
-        fits_utils::write_fits_image(fineh, nx, ny, filename(name, "fineh.fits"),keywords);
+        fits_utils::write_fits_image(largep, nx, ny, filename(name, "largep.fits.gz"),keywords);
+        fits_utils::write_fits_image(coarsep, nx, ny, filename(name, "coarsep.fits.gz"),keywords);
+        fits_utils::write_fits_image(mediump, nx, ny, filename(name, "mediump.fits.gz"),keywords);
+        fits_utils::write_fits_image(mediumh, nx, ny, filename(name, "mediumh.fits.gz"),keywords);
+        fits_utils::write_fits_image(finep, nx, ny, filename(name, "finep.fits.gz"),keywords);
+        fits_utils::write_fits_image(fineh, nx, ny, filename(name, "fineh.fits.gz"),keywords);
 
-        // fits_utils::write_fits_image(largeh, nx, ny, filename(name, "largeh.fits"),keywords);
-        // fits_utils::write_fits_image(coarseh, nx, ny, filename(name, "coarseh.fits"),keywords);
-        // fits_utils::write_fits_image(largel, nx, ny, filename(name, "largel.fits"),keywords);
-        // fits_utils::write_fits_image(coarsel, nx, ny, filename(name, "coarsel.fits"),keywords);
-        // fits_utils::write_fits_image(mediuml, nx, ny, filename(name, "mediuml.fits"),keywords);
-        // fits_utils::write_fits_image(finel, nx, ny, filename(name, "finel.fits"),keywords);
+        // fits_utils::write_fits_image(largeh, nx, ny, filename(name, "largeh.fits.gz"),keywords);
+        // fits_utils::write_fits_image(coarseh, nx, ny, filename(name, "coarseh.fits.gz"),keywords);
+        // fits_utils::write_fits_image(largel, nx, ny, filename(name, "largel.fits.gz"),keywords);
+        // fits_utils::write_fits_image(coarsel, nx, ny, filename(name, "coarsel.fits.gz"),keywords);
+        // fits_utils::write_fits_image(mediuml, nx, ny, filename(name, "mediuml.fits.gz"),keywords);
+        // fits_utils::write_fits_image(finel, nx, ny, filename(name, "finel.fits.gz"),keywords);
 
     }
 

@@ -216,6 +216,9 @@ phosim validation/validation_3B_508_catalog -c validation/validation_3B_508_comm
 phosim validation/validation_3B_509_catalog -c validation/validation_3B_509_commands -e 0 -o validation/
 phosim validation/validation_3B_510_catalog -c validation/validation_3B_510_commands -e 0 -o validation/
 
+# 3D
+phosim validation/validation_3D_catalog -c validation/validation_3D_commands -e 0 -o validation/
+
 # 4B
 phosim validation/validation_4B_00_catalog -c validation/validation_4B_00_commands -e 0 -o validation/
 phosim validation/validation_4B_01_catalog -c validation/validation_4B_00_commands -e 0 -o validation/

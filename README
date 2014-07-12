@@ -1,14 +1,10 @@
 ------------------------------------------------------------
-Photon Simulator (phoSim)
+Photon Simulator (PhoSim)
 ------------------------------------------------------------
 
-The photon simulator is a sophisticated set of codes that take astronomical catalogs and turn them into images using a photon Monte Carlo approach that encodes the physics of the atmosphere, telescope, and camera.    The documentation for phoSim is at https://dev.lsstcorp.org/trac/wiki/IS_phosim
+The photon simulator is a sophisticated set of codes that take astronomical catalogs and turn them into images using a photon Monte Carlo approach that encodes the physics of the atmosphere, telescope, and camera.    The documentation for PhoSim is at https://confluence.lsstcorp.org/display/PHOSIM
 
-Custom astronomical catalogs can be used as input to phoSim or, more commonly, the catalog framework which is described here: https://dev.lsstcorp.org/trac/wiki/IS_catsim is used together to produce high fidelity image simulations.
-
-Both phoSim and the catalog framework code are written for the LSST project, the LSST Dark Energy Science Collaboration, and other projects by groups at Purdue University, UC Berkeley, Stanford Linear Accelerator Laboratory, and University of Washington.
-
-PhoSim was created by John Peterson & Garrett Jernigan, and was subsequently developed by many collaborators.  Please reference Peterson et al. (2013), in preparation if you find this code useful.
+PhoSim was created by John Peterson & Garrett Jernigan, and was subsequently developed by many collaborators.  Please reference Peterson et al. (2015), ApJS in preparation if you find this code useful.
 
 -------------
 INSTALLATION:
@@ -67,23 +63,23 @@ To run on condor:
 Directories:
 ------------
 
-		source:         all phosim source files & build directories
-		bin:            binaries; setup/version config files
-		data:           all input data (small files in repository+SEDs)
-		work:           location of all temporary files
-		output:         default final output FITS files
-		examples:       some simple example catalog & command files
-		validation:     validation instance catalog & command files
-		docs:           all documentation
-		condor:         condor specific files
-		tools:          misc tools (some obsolete)
+        source:         all phosim source files & build directories
+        bin:            binaries; setup/version config files
+        data:           all input data (small files in repository+SEDs)
+        work:           location of all temporary files
+        output:         default final output FITS files
+        examples:       some simple example catalog & command files
+        validation:     validation instance catalog & command files
+        docs:           all documentation
+        condor:         condor specific files
+        tools:          misc tools (some obsolete)
 
 -------------------
 Files in top level:
 -------------------
 
-		phosim                  main script
-		COPYING                 license file
-		README                  this file
-		default_instcat         default catalog operation values
-		validation_pipeline     pipeline of validation scripts
+        phosim                  main script
+        COPYING                 license file
+        README                  this file
+        default_instcat         default catalog operation values
+        validation_pipeline     pipeline of validation scripts

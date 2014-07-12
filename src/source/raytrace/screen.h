@@ -11,6 +11,14 @@
 /// treat results with caution.
 ///
 
+#ifndef Screen_H
+#define Screen_H
+
+#include <fftw3.h>
+#include <fitsio.h>
+#include <fitsio2.h>
+#include "parameters.h"
+
 class Screen {
 
  public:
@@ -36,4 +44,9 @@ class Screen {
     double wavelengthfactor_nom;
     double *jitterwind;
 
+    double readScreen(int keynum, float *array, char *tempstring);
+
 };
+
+
+#endif

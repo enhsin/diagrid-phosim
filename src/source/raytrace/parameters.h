@@ -1,3 +1,6 @@
+#ifndef Par_H
+#define Par_H
+
 // general numerical accuracy
 const int SURFACE_POINTS = 1024;
 const int SCREEN_SIZE = 1024;
@@ -12,6 +15,8 @@ const int MAX_SURF = 20;
 const int MAX_LAYER = 100;
 const int MAX_IMAGE = 100;
 const int MAX_BOUNCE = 100;
+const int NZERN = 21;
+const int NCHEB = 21;
 const double RAYTRACE_TOLERANCE = 1e-4;
 
 // for trim
@@ -20,3 +25,5 @@ const int maxCatalog = 20;
 
 // for silicon
 const int SILICON_STEPS = 1024;
+
+#endif

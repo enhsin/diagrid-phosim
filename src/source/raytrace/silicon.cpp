@@ -228,10 +228,10 @@ void Silicon::setup (double ccdtemp, double N_bulk, double N_f, double N_b,
     for (long i = 1;i<(nampx - 1);i++) {
         for (long j = 1;j<(nampy - 1);j++) {
             sigmaX[nampx*j + i] = (nbulkmap[nampx*j + i + 1] - nbulkmap[nampx*j + i - 1])*
-                N_bulk*(period*pixsize*1e-4)*(period*pixsize*1e-4)/(2.0*M_PI)/(2.0*M_PI)*E_CHARGE/
+                N_bulk*(2.0*t_si)*(period*pixsize*1e-4)/(2.0*M_PI)/(2.0*M_PI)*E_CHARGE/
                 EPSILON_SI/EPSILON_0/2.0/(pixsize*1e-4)/2.0;
             sigmaY[nampx*j + i] = (nbulkmap[nampx*(j + 1) + i] - nbulkmap[nampx*(j - 1) + i])*
-                N_bulk*(period*pixsize*1e-4)*(period*pixsize*1e-4)/(2.0*M_PI)/(2.0*M_PI)*E_CHARGE/
+                N_bulk*(2.0*t_si)*(period*pixsize*1e-4)/(2.0*M_PI)/(2.0*M_PI)*E_CHARGE/
                 EPSILON_SI/EPSILON_0/2.0/(pixsize*1e-4)/2.0;
         }
     }

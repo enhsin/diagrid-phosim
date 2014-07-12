@@ -23,12 +23,8 @@ class Perturbation {
     std::vector<double> decenterX;
     std::vector<double> decenterY;
     std::vector<double> defocus;
-    double *zernike_r;
-    double *zernike_phi;
     double *zernike_r_grid;
     double *zernike_phi_grid;
-    double *zernike_normal_r;
-    double *zernike_normal_phi;
     double *zernike_coeff;
     double *zernike_summed;
     double *zernike_summed_nr_p;
@@ -40,7 +36,7 @@ class Perturbation {
     double *jitterele;
     double *jitterazi;
     double *jittertime;
-    int zernikeflag;
+    std::vector<int> zernikeflag;
 
 };
 

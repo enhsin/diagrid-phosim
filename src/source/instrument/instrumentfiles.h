@@ -28,6 +28,7 @@
 #include "../ancillary/readtext.h"
 #include "../raytrace/basic_types.h"
 #include "../raytrace/rng_mwc.h"
+#include "../raytrace/parameters.h"
 using namespace RandomNumbers;
 using ancillary::PhosimParser;
 using readtext::readText;
@@ -37,17 +38,19 @@ class InstrumentFiles {
     InstrumentFiles();
     ~InstrumentFiles();
 
-    void makeTrackingFile(PhosimParser& pars);
-    int  readControlFile(PhosimParser& pars,PhosimParser& controlPars);
-    void readActuatorFile(PhosimParser& pars,PhosimParser& controlPars,
+    void makeTrackingFile(std::string trackingFileName, double vistime, double jittertime);
+    int  readControlFile(PhosimParser& pars, PhosimParser& controlPars);
+    void readActuatorFile(PhosimParser& pars, PhosimParser& controlPars,
                           std::vector < std::vector < double> >& actuatorMatrix,
                           std::vector < double >& actuatorDistance,
                           std::vector < double >& actuatorError);
-    void writeBodyFile(std::map< int, std::vector< double>* >& body,
-                       PhosimParser& pars);
-    void readoutPars(PhosimParser& pars);
-    void focalPlanePars(PhosimParser& pars);
-    void makeSurfaceMap(PhosimParser& pars);
+    void writeBodyFile(std::map< int, std::vector< double>* >& body, std::string opticsFileName, std::string obsID);
+    void readoutPars(std::string focalPlaneLayoutFileName,
+                     std::string segmentationFileName,
+                     std::string readoutString, int camConfig);
+    void focalPlanePars(std::string focalPlaneLayoutFileName,
+                        std::string outChipString, int camConfig);
+    void makeSurfaceMap(std::string opticsFile);
     bool getDeviceIndex(std::string deviceStr, int& deviceIndex);
  private:
     std::map< std::string, int > fSurfaceMap;

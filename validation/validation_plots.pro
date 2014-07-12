@@ -106,6 +106,10 @@ pro validation_plots,regression
   num=num+1
   validation_3C,num,vers,value,tolerance_low,tolerance_high,task,name,unit,comparison
 
+;VALIDATION TASK 3D:  SIZE VS INTENSITY
+  num=num+1
+  validation_3D,num,vers,value,tolerance_low,tolerance_high,task,name,unit,comparison
+
 ;VALIDATION TASK 4A:  SPEED TEST
   num=num+1
   validation_4A,num,vers,value,tolerance_low,tolerance_high,task,name,unit,comparison
