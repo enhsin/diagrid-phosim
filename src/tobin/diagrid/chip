@@ -35,11 +35,13 @@ def posttrim(argv):
                        seds.append(line.split()[5])
                 uniqseds=list(set(seds))
                 if len(seds)>0:
-                    tar = tarfile.open('SEDs_'+obsid+'_'+cid+'.tar', "w")
+                    pfile=open('trimcatalog_'+obsid+'_'+cid+'_uniq.pars','w')  
                     for s in uniqseds:
-                        fileName=os.path.join(sedDir,s)
-                        tar.add(fileName,fileName.split("/")[-1]) #create a flat list
-                    tar.close()
+                        if s==uniqseds[0]:
+                            pfile.write(os.path.join(sedDir,s))
+                        else:
+                            pfile.write(','+os.path.join(sedDir,s))
+                    pfile.close()
                 for ex in range(nexp):
                     eid="E%03d" % (ex)
                     fid=obsid+'_'+cid+'_'+eid
@@ -53,6 +55,22 @@ def posttrim(argv):
         else:
             sys.exit(1)
 
+def preraytrace(argv):
+    observationID=argv[2]
+    jobID=argv[3]
+    cid=argv[4]
+    workDir=os.path.join(os.getcwd(),'../scratch')
+
+    if os.path.exists('raytrace_'+jobID+'.sub'):
+        seds=os.path.join(workDir,'trimcatalog_'+observationID+'_'+cid+'_uniq.pars')
+        if os.path.exists(seds):
+            newsub=open('raytrace_'+jobID+'.sub.new','w')
+            newsub.write(open('raytrace_'+jobID+'.sub').read().replace('segmentation.txt',open(seds).read()))
+            newsub.close()
+            shutil.move('raytrace_'+jobID+'.sub.new','raytrace_'+jobID+'.sub') 
+    else:
+        sys.exit(1)
+    
 def postraytrace(argv):
     observationID=argv[2]
     filt=argv[3]

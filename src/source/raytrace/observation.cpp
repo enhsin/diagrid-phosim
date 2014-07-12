@@ -1414,6 +1414,15 @@ int Observation::parser () {
         bindir  =  ".";
     }
 
+    std::ostringstream tarName;
+    tarName << "raytrace_" << obshistid << ".tar";
+    std::ifstream tarFile(tarName.str().c_str());
+    if (tarFile.good()) {
+        std::cout<<"Untarring "<<tarName.str()<<std::endl;
+        std::string tarCommand = "tar xf " + tarName.str();
+        system(tarCommand.c_str());
+    }
+
     focalplanefile = instrdir + "/focalplanelayout.txt";
     std::istringstream focalplanePars(readText::get(focalplanefile, chipid));
     double centerx_t, centery_t, pixsize_t;

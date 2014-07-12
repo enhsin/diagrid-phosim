@@ -10,14 +10,13 @@ def initEnvironment(self):
 
     observationID=self.observationID
     # Add input file to the DAX-level replica catalog
-    fp=File("version")
-    fp.addPFN(PFN("file://" + os.path.join(self.binDir,'version'), "local"))
-    self.dax.addFile(fp)
-    tarName='raytrace_'+observationID+'.tar'
-    tar = tarfile.open(tarName, "w")
     for f in ['focalplanelayout','central_wavelengths','segmentation']:
         fp=File(f+'.txt')
         fp.addPFN(PFN("file://" + os.path.join(self.instrDir,f+'.txt'), "local"))
+        self.dax.addFile(fp)
+    tarName='raytrace_'+observationID+'.tar'
+    tar = tarfile.open(tarName, "w")
+    tar.add(os.path.join(self.binDir,'version'),"version")
     for f in ['m1_protAl_Ideal','m2_protAl_Ideal','m3_protAl_Ideal','silica_dispersion','lenses',
               'detectorar','focalplanelayout','silicon','location','central_wavelengths','spider','tracking']:
         tar.add(os.path.join(self.instrDir,f+'.txt'),f+'.txt')
@@ -32,10 +31,12 @@ def initEnvironment(self):
         tar.add(os.path.join(self.dataDir, 'cosmic_rays', 'iray'+str(n)+'.txt'),'iray'+str(n)+'.txt')
     for f in ['cloudscreen_'+observationID+'_1.fits.gz', 'cloudscreen_'+observationID+'_2.fits.gz', 'airglowscreen_'+observationID+'.fits.gz']:
         tar.add(f)
+        os.remove(f)
     for layer in range(7):
         for f in ['coarsep','coarsex','coarsey','fineh','finep',
                  'largep','largex','largey','mediumh','mediump','mediumx','mediumy']:
             tar.add('atmospherescreen_'+observationID+'_'+str(layer)+'_'+f+'.fits.gz')
+            os.remove('atmospherescreen_'+observationID+'_'+str(layer)+'_'+f+'.fits.gz')
     tar.close()
     fp=File(tarName)
     fp.addPFN(PFN("file://" + os.path.join(os.getcwd(),tarName), "local"))
@@ -79,7 +80,7 @@ def writeTrimDag(self,jobName,tc,nexp):
     for line in open(jobName+'.pars'):
         if "chipid" in line:
             cid=line.split()[2]
-            trim.uses( File('trimcatalog_'+self.observationID+'_'+cid+'.pars'), link=Link.OUTPUT, transfer=False, register=False)
+            trim.uses( File('trimcatalog_'+self.observationID+'_'+cid+'.pars'), link=Link.OUTPUT)
 
     trim.addProfile(Profile(namespace="dagman", key="POST", value="posttrim"))
     trim.addProfile(Profile(namespace="dagman", key="POST.PATH.posttrim", value=os.path.join(self.binDir,"diagrid","chip")))
@@ -96,43 +97,17 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
     for ckpt in range(checkpoint+1):
         fidckpt=fid+'_'+str(ckpt)
         jobName='raytrace_'+fidckpt
-        exec('raytrace'+str(ckpt)+'=Job(namespace="phosim", name="raytrace")')
+        jobID=self.dax.nextJobID()
+        exec('raytrace'+str(ckpt)+'=Job(namespace="phosim", name="raytrace", id=jobID)')
         eval('raytrace'+str(ckpt)+'.setStdin("'+jobName+'.pars")')
         eval('raytrace'+str(ckpt)+'.uses(File("'+jobName+'.pars"), link=Link.INPUT)')
         fp=File(jobName+'.pars')
         fp.addPFN(PFN("file://" + os.path.join(os.getcwd(),jobName+'.pars'), "local"))
         self.dax.addFile(fp)
-        for f in ['cloudscreen_'+observationID+'_1.fits.gz', 'cloudscreen_'+observationID+'_2.fits.gz', 'airglowscreen_'+observationID+'.fits.gz']:
-            eval('raytrace'+str(ckpt)+'.uses(File("'+f+'"), link=Link.INPUT)')
-        for layer in range(7):
-            for f in ['coarsep','coarsex','coarsey','fineh','finep',
-                     'largep','largex','largey','mediumh','mediump','mediumx','mediumy']:
-                eval('raytrace'+str(ckpt)+'.uses(File("atmospherescreen_'+observationID+'_'+str(layer)+'_'+f+'.fits.gz"), link=Link.INPUT)')
-        eval('raytrace'+str(ckpt)+'.uses(File("version"), link=Link.INPUT)')
-        for f in ['m1_protAl_Ideal','m2_protAl_Ideal','m3_protAl_Ideal','silica_dispersion','lenses',
-                  'detectorar','focalplanelayout','silicon','location','central_wavelengths','spider','tracking']:
-            eval('raytrace'+str(ckpt)+'.uses(File("'+f+'.txt"), link=Link.INPUT)')
-        for filt in range(6):
-            eval('raytrace'+str(ckpt)+'.uses(File("optics_'+str(filt)+'.txt"), link=Link.INPUT)')
-            eval('raytrace'+str(ckpt)+'.uses(File("filter_'+str(filt)+'.txt"), link=Link.INPUT)')
-        for f in ['rayprofile','nprofile','o3cs','o3profile','o2cs','h2ocs','h2oprofile']:
-            eval('raytrace'+str(ckpt)+'.uses(File("'+f+'.txt"), link=Link.INPUT)')
-        for f in ['darksky_sed','lunar_sed','sed_dome','sersic_const']:
-            eval('raytrace'+str(ckpt)+'.uses(File("'+f+'.txt"), link=Link.INPUT)')
-        for n in range(1,131):
-            eval('raytrace'+str(ckpt)+'.uses(File("iray'+str(n)+'.txt"), link=Link.INPUT)')
         eval('raytrace'+str(ckpt)+'.uses(File("tracking_'+observationID+'.pars"), link=Link.INPUT)')
-        eval('raytrace'+str(ckpt)+'.uses(File("raytrace_"+observationID+".tar"), link=Link.INPUT)')
+        eval('raytrace'+str(ckpt)+'.uses(File("raytrace_'+observationID+'.tar"), link=Link.INPUT)')
+        eval('raytrace'+str(ckpt)+'.uses(File("segmentation.txt"), link=Link.INPUT)') # will replace with SEDs
         if ckpt==0:
-            if eid=='E000':
-                tarName='SEDs_'+observationID+'_'+cid+'.tar'
-                tar = tarfile.open(tarName, "w")
-                fileName=os.path.join(self.dataDir, 'sky','sed_flat.txt')
-                tar.add(fileName,"tmp.txt")
-                tar.close()
-                fp=File(tarName)
-                fp.addPFN(PFN("file://" + os.path.join(os.getcwd(),tarName), "local"))
-                self.dax.addFile(fp)
             if ckpt!=checkpoint:
                 eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt.fits.gz"), link=Link.OUTPUT, transfer=False, register=False)')
                 eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp.fits.gz"), link=Link.OUTPUT, transfer=False, register=False)')
@@ -150,6 +125,9 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
                 arg='postraytrace %s %s %s %s %s' % (observationID,self.filt,cid,eid,self.outputDir)
                 eval('raytrace'+str(ckpt)+'.addProfile(Profile(namespace="dagman", key="POST.ARGUMENTS", value=arg))')
 
+        eval('raytrace'+str(ckpt)+'.addProfile(Profile(namespace="dagman", key="PRE", value=os.path.join(self.binDir,"diagrid","chip")))')
+        arg='preraytrace %s %s %s' % (observationID,jobID,cid)
+        eval('raytrace'+str(ckpt)+'.addProfile(Profile(namespace="dagman", key="PRE.ARGUMENTS", value=arg))')
         eval('self.dax.addJob(raytrace'+str(ckpt)+')')
 
         if ckpt==0:
@@ -189,6 +167,7 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
         self.dax.addJob(e2adc)
         eval('self.dax.depends(parent=raytrace'+str(checkpoint)+',child=e2adc)')
 
+    os.remove('raytrace_'+fid+'.pars')
 
 def submitDax(self):
     fp=open('phosim_'+self.observationID+'.dax','w')
@@ -196,7 +175,7 @@ def submitDax(self):
     fp.close()
 
     command='submit pegasus-plan --dax phosim_'+self.observationID+'.dax'
-    #print command
-    if subprocess.call(command, shell=True) != 0:
-        raise RuntimeError("Error running %s" % command)
+    print command
+    #if subprocess.call(command, shell=True) != 0:
+    #    raise RuntimeError("Error running %s" % command)
 
