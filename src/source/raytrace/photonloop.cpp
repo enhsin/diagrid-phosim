@@ -53,7 +53,7 @@ int Image::photonLoop () {
     for (int i = 0; i < (natmospherefile*2 + nsurf*2 + 2); i++) dynamicTransmission[i] = (double*)malloc(901*sizeof(double));
     for (int i = 0; i < (natmospherefile*2 + nsurf*2 + 2); i++)
         for (int j = 0; j < 901; j++) dynamicTransmission[i][j] = -1.0;
-    if (checkpointcount  !=  0) readCheckpoint();
+    if (checkpointcount  !=  0) readCheckpoint(checkpointcount);
 
     //    LOGGING INITIALIZATION
     if (eventfile) {
@@ -694,9 +694,9 @@ int Image::photonLoop () {
     }
 
     // OUTPUT DATA
-    writeImageFile();
+    if (checkpointcount == checkpointtotal) writeImageFile();
     if (opdfile) writeOPD();
-    if (checkpointcount !=  checkpointtotal) writeCheckpoint();
+    if (checkpointcount !=  checkpointtotal) writeCheckpoint(checkpointcount);
     if (centroidfile) writeCentroidFile(outputdir, outputfilename, source_photon, source_xpos, source_ypos, sources.id, nsource);
     if (throughputfile) writeThroughputFile(outputdir, outputfilename, &throughputLog, nsurf);
     if (eventfile) pEventLogging->eventFileClose();

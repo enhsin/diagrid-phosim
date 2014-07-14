@@ -107,20 +107,20 @@ def postraytrace(argv):
     ckpt=argv[8]
     fid=observationID + '_' + cid + '_' + eid
 
-    if returnValue(workDir+'/logs/log_'+fid+'.log'):
+    if os.path.exists(workDir+'/lsst_e_'+fid+'.fits.gz'):
         cleanupPars('raytrace_'+fid+'_'+ckpt,workDir)
+        ckptpre=int(float(ckpt))-1
+        if ckptpre>=0:
+            for f in ['lsst_e_'+fid+'_ckptdt_'+str(ckptpre)+'.fits.gz','lsst_e_'+fid+'_ckptfp_'+str(ckptpre)+'.fits.gz']:
+                if os.path.exists(workDir+'/'+f):
+                    os.remove(workDir+'/'+f)
         cleanupOuts(fid,workDir)
-        files=['lsst_e_'+fid+'_ckptdt.fits.gz','lsst_e_'+fid+'_ckptfp.fits.gz']
-        for f in files:
-            if os.path.exists(workDir+'/'+f):
-                os.remove(workDir+'/'+f)
         cleanupScreens(observationID,workDir)
 
         os.chdir(workDir)
         eImage='lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz'
         eImageRename=outputDir+'/lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz'
-        if os.path.exists(eImage):
-            shutil.move(eImage,eImageRename)
+        shutil.move(eImage,eImageRename)
     else:
         sys.exit(1)
 
@@ -129,8 +129,14 @@ def raytracecleanup(argv):
     ckpt=argv[3]
     workDir=argv[4]
 
-    if returnValue(workDir+'/logs/log_'+fid+'.log'):
+    files=['lsst_e_'+fid+'_ckptdt_'+ckpt+'.fits.gz','lsst_e_'+fid+'_ckptfp_'+ckpt+'.fits.gz']
+    if os.path.exists(workDir+'/'+files[0]) and os.path.exists(workDir+'/'+files[1]):
         cleanupPars('raytrace_'+fid+'_'+ckpt,workDir)
+        ckptpre=int(float(ckpt))-1
+        if ckptpre>=0:
+            for f in ['lsst_e_'+fid+'_ckptdt_'+str(ckptpre)+'.fits.gz','lsst_e_'+fid+'_ckptfp_'+str(ckptpre)+'.fits.gz']:
+                if os.path.exists(workDir+'/'+f):
+                    os.remove(workDir+'/'+f)
     else:
         sys.exit(1)
 
@@ -139,12 +145,13 @@ def lastraytracecleanup(argv):
     ckpt=argv[3]
     workDir=argv[4]
 
-    if returnValue(workDir+'/logs/log_'+fid+'.log'):
+    if os.path.exists(workDir+'/lsst_e_'+fid+'.fits.gz'):
         cleanupPars('raytrace_'+fid+'_'+ckpt,workDir)
-        files=['lsst_e_'+fid+'_ckptdt.fits.gz','lsst_e_'+fid+'_ckptfp.fits.gz']
-        for f in files:
-            if os.path.exists(workDir+'/'+f):
-                os.remove(workDir+'/'+f)
+        ckptpre=int(float(ckpt))-1
+        if ckptpre>=0:
+            for f in ['lsst_e_'+fid+'_ckptdt_'+str(ckptpre)+'.fits.gz','lsst_e_'+fid+'_ckptfp_'+str(ckptpre)+'.fits.gz']:
+                if os.path.exists(workDir+'/'+f):
+                    os.remove(workDir+'/'+f)
     else:
         sys.exit(1)
 
@@ -158,32 +165,32 @@ def poste2adc(argv):
     workDir=argv[8]
     fid=observationID + '_' + cid + '_' + eid
 
-    if returnValue(workDir+'/logs/log_'+fid+'.log'):
-        cleanupPars('e2adc_'+fid,workDir)
-        cleanupOuts(fid,workDir)
-        cleanupScreens(observationID,workDir)
-
-        os.chdir(workDir)
-        tarFiles=''
-        segfile=os.path.join(instrDir,'segmentation.txt')
-        for line in open(segfile):
-            aid=line.split()[0]
-            if cid in line and aid != cid:
-                rawImage='lsst_a_'+observationID+'_'+aid+'_'+eid+'.fits.gz'
-                rawImageRename=outputDir+'/lsst_a_'+observationID+'_f'+filt+'_'+aid+'_'+eid+'.fits.gz'
+    os.chdir(workDir)
+    tarFiles=''
+    segfile=os.path.join(instrDir,'segmentation.txt')
+    for line in open(segfile):
+        aid=line.split()[0]
+        if cid in line and aid != cid:
+            rawImage='lsst_a_'+observationID+'_'+aid+'_'+eid+'.fits.gz'
+            rawImageRename=outputDir+'/lsst_a_'+observationID+'_f'+filt+'_'+aid+'_'+eid+'.fits.gz'
+            if os.path.exists(rawImage):
                 shutil.move(rawImage,rawImageRename)
                 tarFiles+=rawImageRename.split('/')[-1]+' '
+            else:
+                sys.exit(1)
 
-        eImage='lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz'
-        eImageRename=outputDir+'/lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz'
-        shutil.move(eImage,eImageRename)
-        tarFiles+=(eImageRename.split('/')[-1])
+    eImage='lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz'
+    eImageRename=outputDir+'/lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz'
+    shutil.move(eImage,eImageRename)
+    tarFiles+=(eImageRename.split('/')[-1])
 
-        os.chdir(outputDir)
-        tar='lsst_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.tar'
-        runProgram('tar cf '+tar+' '+tarFiles+' --remove-files')
-    else:
-        sys.exit(1)
+    os.chdir(outputDir)
+    tar='lsst_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.tar'
+    runProgram('tar cf '+tar+' '+tarFiles+' --remove-files')
+
+    cleanupPars('e2adc_'+fid,workDir)
+    cleanupOuts(fid,workDir)
+    cleanupScreens(observationID,workDir)
 
 
 function=sys.argv[1]

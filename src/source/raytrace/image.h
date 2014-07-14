@@ -140,8 +140,8 @@ class Image : public Observation {
     // output
     void writeImageFile();
     void writeOPD();
-    void readCheckpoint();
-    void writeCheckpoint();
+    void readCheckpoint(int checkpointcount);
+    void writeCheckpoint(int checkpointcount);
     void cleanup();
 
 };

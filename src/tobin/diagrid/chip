@@ -35,7 +35,7 @@ def posttrim(argv):
                        seds.append(line.split()[5])
                 uniqseds=list(set(seds))
                 if len(seds)>0:
-                    pfile=open('trimcatalog_'+obsid+'_'+cid+'_uniq.pars','w')  
+                    pfile=open('trimcatalog_'+obsid+'_'+cid+'_uniq.pars','w')
                     for s in uniqseds:
                         if s==uniqseds[0]:
                             pfile.write(os.path.join(sedDir,s))
@@ -67,10 +67,10 @@ def preraytrace(argv):
             newsub=open('raytrace_'+jobID+'.sub.new','w')
             newsub.write(open('raytrace_'+jobID+'.sub').read().replace('segmentation.txt',open(seds).read()))
             newsub.close()
-            shutil.move('raytrace_'+jobID+'.sub.new','raytrace_'+jobID+'.sub') 
+            shutil.move('raytrace_'+jobID+'.sub.new','raytrace_'+jobID+'.sub')
     else:
         sys.exit(1)
-    
+
 def postraytrace(argv):
     observationID=argv[2]
     filt=argv[3]

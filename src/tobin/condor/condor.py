@@ -65,8 +65,8 @@ def writeSubmit(self, job, jobName, fid='none', ckpt=0):
         submitfile.write('tracking_%s.pars' % self.observationID)
 
         if ckpt>0:
-            submitfile.write(', %s_e_%s_ckptdt.fits.gz' % (instrument,fid))
-            submitfile.write(', %s_e_%s_ckptfp.fits.gz' % (instrument,fid))
+            submitfile.write(', %s_e_%s_ckptdt_%d.fits.gz' % (instrument,fid,ckpt-1))
+            submitfile.write(', %s_e_%s_ckptfp_%d.fits.gz' % (instrument,fid,ckpt-1))
 
     else:
         if job == 'trim':

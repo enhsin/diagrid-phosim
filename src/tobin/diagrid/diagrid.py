@@ -107,13 +107,12 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
         eval('raytrace'+str(ckpt)+'.uses(File("tracking_'+observationID+'.pars"), link=Link.INPUT)')
         eval('raytrace'+str(ckpt)+'.uses(File("raytrace_'+observationID+'.tar"), link=Link.INPUT)')
         eval('raytrace'+str(ckpt)+'.uses(File("segmentation.txt"), link=Link.INPUT)') # will replace with SEDs
-        if ckpt==0:
-            if ckpt!=checkpoint:
-                eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt.fits.gz"), link=Link.OUTPUT, transfer=False, register=False)')
-                eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp.fits.gz"), link=Link.OUTPUT, transfer=False, register=False)')
-        else:
-            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt.fits.gz"), link=Link.INPUT)')
-            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp.fits.gz"), link=Link.INPUT)')
+        if ckpt>0:
+            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt_'+str(ckpt-1)+'.fits.gz"), link=Link.INPUT)')
+            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp_'+str(ckpt-1)+'.fits.gz"), link=Link.INPUT)')
+        if ckpt<checkpoint:
+            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt_'+str(ckpt)+'.fits.gz"), link=Link.OUTPUT, transfer=False, register=False)')
+            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp_'+str(ckpt)+'.fits.gz"), link=Link.OUTPUT, transfer=False, register=False)')
         if ckpt==checkpoint:
             fileName=instrument+'_e_'+fid+'.fits.gz'
             if run_e2adc:
@@ -159,7 +158,6 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
             aid=line.split()[0]
             if cid in line and aid != cid:
                 e2adc.uses(File(instrument+'_a_'+observationID+'_'+aid+'_'+eid+'.fits.gz'), link=Link.OUTPUT)
-        #fileName=instrument+'_'+observationID+'_f'+self.filt+'_'+cid+'_'+eid+'.tar'
         e2adc.addProfile(Profile(namespace="dagman", key="POST", value="poste2adc"))
         e2adc.addProfile(Profile(namespace="dagman", key="POST.PATH.poste2adc", value=os.path.join(self.binDir,"diagrid","chip")))
         arg='poste2adc %s %s %s %s %s %s' % (observationID,self.filt,cid,eid,self.outputDir,self.instrDir)
@@ -175,7 +173,6 @@ def submitDax(self):
     fp.close()
 
     command='submit pegasus-plan --dax phosim_'+self.observationID+'.dax'
-    print command
-    #if subprocess.call(command, shell=True) != 0:
-    #    raise RuntimeError("Error running %s" % command)
+    if subprocess.call(command, shell=True) != 0:
+        raise RuntimeError("Error running %s" % command)
 

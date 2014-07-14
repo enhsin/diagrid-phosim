@@ -141,7 +141,7 @@ void Image::writeOPD () {
 
 }
 
-void Image::writeCheckpoint() {
+void Image::writeCheckpoint(int checkpointcount) {
 
     fitsfile *faptr;
     long naxes[2];
@@ -159,8 +159,9 @@ void Image::writeCheckpoint() {
     }
 
     status = 0;
-    std::string filename = "!"+outputdir+"/"+outputfilename+"_ckptdt.fits.gz";
-    fits_create_file(&faptr, filename.c_str(), &status);
+    std::ostringstream filename;
+    filename << "!"<< outputdir << "/" << outputfilename << "_ckptdt_" << checkpointcount << ".fits.gz";
+    fits_create_file(&faptr, filename.str().c_str(), &status);
     naxes[0] = 1; naxes[1] = 1;
     fits_create_img(faptr, DOUBLE_IMG, 2, naxes, &status);
     naxes[0] = 901; naxes[1] = (natmospherefile*2+nsurf*2+2);
@@ -173,8 +174,9 @@ void Image::writeCheckpoint() {
 
     free(tempDynamicTransmission);
 
-    filename = "!"+outputdir+"/"+outputfilename+"_ckptfp.fits.gz";
-    fits_create_file(&faptr, filename.c_str(), &status);
+    filename.str("");
+    filename << "!"<< outputdir << "/" << outputfilename << "_ckptfp_" << checkpointcount << ".fits.gz";
+    fits_create_file(&faptr, filename.str().c_str(), &status);
     naxes[0] = 1; naxes[1] = 1;
     fits_create_img(faptr, FLOAT_IMG, 2, naxes, &status);
     naxes[0] = chip.nampx; naxes[1] = chip.nampy;
@@ -186,7 +188,7 @@ void Image::writeCheckpoint() {
 
 }
 
-void Image::readCheckpoint() {
+void Image::readCheckpoint(int checkpointcount) {
 
     fitsfile *faptr;
     long naxes[2];
@@ -199,9 +201,10 @@ void Image::readCheckpoint() {
 
     tempDynamicTransmission = (double*)calloc((natmospherefile*2+nsurf*2+2)*(901), sizeof(double));
 
-    std::string filename = outputdir+"/"+outputfilename+"_ckptdt.fits.gz";
+    std::ostringstream filename;
+    filename << outputdir << "/" << outputfilename << "_ckptdt_" << checkpointcount-1 << ".fits.gz";
     status = 0;
-    if (fits_open_file(&faptr, filename.c_str(), READONLY, &status)) {printf("Error opening %s\n", filename.c_str()); exit(1);}
+    if (fits_open_file(&faptr, filename.str().c_str(), READONLY, &status)) {printf("Error opening %s\n", filename.str().c_str()); exit(1);}
     fits_read_keys_lng(faptr, (char*)"NAXIS", 1, 2, naxes, &nfound, &status);
     fits_read_key(faptr, TUINT, "M_Z", &z, NULL, &status);
     fits_read_key(faptr, TUINT, "M_W", &w, NULL, &status);
@@ -218,9 +221,10 @@ void Image::readCheckpoint() {
     free(tempDynamicTransmission);
 
 
-    filename = outputdir+"/"+outputfilename+"_ckptfp.fits.gz";
+    filename.str("");
+    filename << outputdir << "/" << outputfilename << "_ckptfp_" << checkpointcount-1 << ".fits.gz";
     status = 0;
-    if (fits_open_file(&faptr, filename.c_str(), READONLY, &status)) {printf("Error opening %s\n", filename.c_str()); exit(1);}
+    if (fits_open_file(&faptr, filename.str().c_str(), READONLY, &status)) {printf("Error opening %s\n", filename.str().c_str()); exit(1);}
     fits_read_keys_lng(faptr, (char*)"NAXIS", 1, 2, naxes, &nfound, &status);
     fits_read_img(faptr, TFLOAT, 1, naxes[0]*naxes[1], &nullval, chip.focal_plane, &anynull, &status);
     fits_close_file(faptr, &status);
