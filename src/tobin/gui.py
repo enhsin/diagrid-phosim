@@ -41,7 +41,8 @@ browserapp = filebrowser.browserapp()
 INSTANCECATALOG = "instancecatalog"
 EXTRACOMMANDS = "extracommands"
 E2ADC = "e2adc"
-options = {INSTANCECATALOG:"", EXTRACOMMANDS:"", E2ADC:"0"}
+INSTRUMENT = "instrument"
+options = {INSTANCECATALOG:"", EXTRACOMMANDS:"", E2ADC:"0", INSTRUMENT:"lsst"}
 
 log = open("output.log", "w")
 
@@ -58,6 +59,9 @@ def launchworkspace():
 def launchopen(optionsindex, label):
 	browserapp.threadwindow(basefolder=[workspacedir, exampledir, validationdir, phosimdir], basefoldername=["Workspace", "Examples", "Validation", "Phosim"], basefoldermakedirs=True, openmode=True, openmethod=functools.partial(openmethod, optionsindex=optionsindex, label=label))
 
+def launchinstrumentopen(optionsindex, label):
+	browserapp.threadwindow(basefolder=[datadir, workspacedir, exampledir, validationdir, phosimdir], basefoldername=["Data", "Workspace", "Examples", "Validation", "Phosim"], basefoldermakedirs=True, openmode=True, openmethod=functools.partial(openmethod, optionsindex=optionsindex, label=label), foldersonly=True)
+
 def updatee2adc():
 	options[E2ADC] = str(e2adcvar.get())
 
@@ -65,17 +69,17 @@ def phosimpyothercommands():
 	return ["-o", outputdir, "-w", workdir, "-b", bindir, 
 		"-d", datadir, "--sed="+seddir, "--image="+imagedir]
 
-def runphosimpy(instancecatalog, extracommands, e2adcflag, log, grid="no", ckpt=0):
+def runphosimpy(instancecatalog, extracommands, e2adcflag, log, grid="no", ckpt=0, instrument="lsst"):
 	
 	command = ["xterm", "-hold", "-title", "phosimrun", "-e", "python", phosimpy, instancecatalog, "-c", extracommands, 
-		"-e", e2adcflag, "-g", grid, "--checkpoint="+str(ckpt)] + phosimpyothercommands()
+		"-e", e2adcflag, "-g", grid, "--checkpoint="+str(ckpt), "-i", instrument] + phosimpyothercommands()
 	
 	print command
 	
 	result = subprocess.Popen(command)
 
 def runuser():
-	runphosimpy(instancecatalog=options[INSTANCECATALOG], extracommands=options[EXTRACOMMANDS], e2adcflag=options[E2ADC], log=log)
+	runphosimpy(instancecatalog=options[INSTANCECATALOG], extracommands=options[EXTRACOMMANDS], e2adcflag=options[E2ADC], log=log, instrument=options[INSTRUMENT])
 	
 def runcalibration():
 	cats = calibrationinstancecatalogs[calibrationinstancecatalog.get()]
@@ -129,13 +133,22 @@ extracommandsdisplay.grid(row=1, column=1, sticky=W)
 extracommandsbutton = Button(userframe, text="[...]", command=functools.partial(launchopen, EXTRACOMMANDS, extracommandsdisplay))
 extracommandsbutton.grid(row=1, column=2)
 
+instrumentlabel = Label(userframe, text="Instrument:")
+instrumentlabel.grid(row=2, column=0, sticky=W)
+
+instrumentdisplay = Label(userframe, text="[no folder selected]")
+instrumentdisplay.grid(row=2, column=1, sticky=W)
+
+instrumentbutton = Button(userframe, text="[...]", command=functools.partial(launchinstrumentopen, INSTRUMENT, instrumentdisplay))
+instrumentbutton.grid(row=2, column=2)
+
 e2adcvar = IntVar()
 
 e2adccheckbox = Checkbutton(userframe, text="Run e2adc", command=updatee2adc, variable=e2adcvar)
-e2adccheckbox.grid(row=2, column=0, columnspan=2, sticky=W)
+e2adccheckbox.grid(row=3, column=0, columnspan=2, sticky=W)
 
 outputbutton = Button(userframe, text="Run Simulation", command=runuser)
-outputbutton.grid(row=3, column=0)
+outputbutton.grid(row=4, column=0)
 
 notebook.add(userframe, text="User")
 

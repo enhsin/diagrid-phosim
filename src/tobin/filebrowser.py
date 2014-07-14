@@ -468,7 +468,7 @@ class MyFrame(wx.Frame):
 		(".Z", "uncompress"), 
 		(".7z", "7z x")]
 	
-	def __init__(self, parent, id, title, basefolder=None, basefoldername=None, basefoldermakedirs=False, openmode=False, openmethod=None, showotherfolders=True, copyinto=False):
+	def __init__(self, parent, id, title, basefolder=None, basefoldername=None, basefoldermakedirs=False, openmode=False, openmethod=None, showotherfolders=True, copyinto=False, foldersonly=False):
 		wx.Frame.__init__(self, parent, id, title, wx.DefaultPosition, wx.Size(800, 500))
 		
 		# menu bar
@@ -526,6 +526,8 @@ class MyFrame(wx.Frame):
 		dirpanel = wx.Panel(self.filesplitter)
 		dirsizer = wx.BoxSizer(wx.VERTICAL)
 		dirpanel.SetSizer(dirsizer)
+		
+		self.foldersonly = foldersonly
 		
 		self.dir = FileTree(dirpanel)#, rootfolder = os.environ['HOME'])
 		dirsizer.Add(self.dir, 1, wx.EXPAND)
@@ -595,6 +597,9 @@ class MyFrame(wx.Frame):
 	def openfiles(self, event=None):
 		itemsselected = GetSelectedItems(self.lc1)
 		paths = [self.getitempath(item) for item in itemsselected]
+		
+		if self.foldersonly and paths == []:
+			paths = [self.getpath()]
 		
 		if self.copyintofolder != None:
 			if any([not path.ischild(self.copyintofolder) for path in paths]):
@@ -837,7 +842,8 @@ class MyFrame(wx.Frame):
 				if path.dir:#os.path.isdir(path):
 					folders.append(path)
 				else:
-					files.append(path)
+					if not self.foldersonly:
+						files.append(path)
 			folders.sort(reverse=True, key=lambda x : x.name().lower())
 			files.sort(reverse=True, key=lambda x : x.name().lower())
 			for path in files:
@@ -1099,8 +1105,8 @@ class browserapp():
 		if not self.runningmainloop:
 			self.mainloop()
 			
-	def threadwindow(self, basefolder=None, basefoldername=None, basefoldermakedirs=False, openmode=False, openmethod=None, showotherfolders=True, copyinto=False):
-		launchwindowmethod = functools.partial(self.launchWindow, basefolder=basefolder, basefoldername=basefoldername, basefoldermakedirs=basefoldermakedirs, openmode=openmode, openmethod=openmethod, showotherfolders=showotherfolders, copyinto=copyinto)
+	def threadwindow(self, **kargs):
+		launchwindowmethod = functools.partial(self.launchWindow, **kargs)
 		if self.runningmainloop:
 			wx.CallAfter(launchwindowmethod)
 		else:
