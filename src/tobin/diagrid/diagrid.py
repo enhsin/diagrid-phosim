@@ -44,6 +44,11 @@ def initEnvironment(self):
     fp=File('tracking_'+observationID+'.pars')
     fp.addPFN(PFN("file://" + os.path.join(os.getcwd(),'tracking_'+observationID+'.pars'), "local"))
     self.dax.addFile(fp)
+    for line in open('catlist_'+observationID+'.pars'):
+        objectCatalog=line.split()[2]
+        fp=File(objectCatalog)
+        fp.addPFN(PFN("file://" + os.path.join(os.getcwd(),objectCatalog), "local"))
+        self.dax.addFile(fp)
 
     e_trim = Executable(namespace="phosim", name="trim", os="linux", arch="x86_64", installed=False)
     e_trim.addPFN(PFN("file://" + os.path.join(self.binDir,'trim'), "condorpool"))
@@ -73,9 +78,6 @@ def writeTrimDag(self,jobName,tc,nexp):
     for line in open('catlist_'+self.observationID+'.pars'):
         objectCatalog=line.split()[2]
         trim.uses( File(objectCatalog), link=Link.INPUT)
-        fp=File(objectCatalog)
-        fp.addPFN(PFN("file://" + os.path.join(os.getcwd(),objectCatalog), "local"))
-        self.dax.addFile(fp)
 
     for line in open(jobName+'.pars'):
         if "chipid" in line:

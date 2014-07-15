@@ -42,7 +42,8 @@ INSTANCECATALOG = "instancecatalog"
 EXTRACOMMANDS = "extracommands"
 E2ADC = "e2adc"
 INSTRUMENT = "instrument"
-options = {INSTANCECATALOG:"", EXTRACOMMANDS:"", E2ADC:"0", INSTRUMENT:"lsst"}
+GRID = "grid"
+options = {INSTANCECATALOG:"", EXTRACOMMANDS:"none", E2ADC:"0", INSTRUMENT:"lsst", GRID:"no"}
 
 log = open("output.log", "w")
 
@@ -65,6 +66,9 @@ def launchinstrumentopen(optionsindex, label):
 def updatee2adc():
 	options[E2ADC] = str(e2adcvar.get())
 
+def updategrid():
+	options[GRID] = gridVar.get()
+
 def phosimpyothercommands():
 	return ["-o", outputdir, "-w", workdir, "-b", bindir, 
 		"-d", datadir, "--sed="+seddir, "--image="+imagedir]
@@ -79,7 +83,9 @@ def runphosimpy(instancecatalog, extracommands, e2adcflag, log, grid="no", ckpt=
 	result = subprocess.Popen(command)
 
 def runuser():
-	runphosimpy(instancecatalog=options[INSTANCECATALOG], extracommands=options[EXTRACOMMANDS], e2adcflag=options[E2ADC], log=log, instrument=options[INSTRUMENT])
+	ckptnum=checkpointVar.get()
+	runphosimpy(instancecatalog=options[INSTANCECATALOG], extracommands=options[EXTRACOMMANDS], e2adcflag=options[E2ADC], log=log, 
+		instrument=options[INSTRUMENT],grid=options[GRID],ckpt=ckptnum)
 	
 def runcalibration():
 	cats = calibrationinstancecatalogs[calibrationinstancecatalog.get()]
@@ -124,31 +130,51 @@ instancecatalogdisplay.grid(row=0, column=1, sticky=W)
 instancecatalogbutton = Button(userframe, text="[...]", command=functools.partial(launchopen, INSTANCECATALOG, instancecatalogdisplay))
 instancecatalogbutton.grid(row=0, column=2)
 
-extracommandslabel = Label(userframe, text="Physics Override Commands:")
-extracommandslabel.grid(row=1, column=0, sticky=W)
+settinglabel = Label(userframe, text="Optional Setting:", font="Verdana 10 bold")
+settinglabel.grid(row=1, column=0, sticky=W)
 
-extracommandsdisplay = Label(userframe, text="[no file selected]")
-extracommandsdisplay.grid(row=1, column=1, sticky=W)
+extracommandslabel = Label(userframe, text="Physics Override Commands:")
+extracommandslabel.grid(row=2, column=0, sticky=W)
+
+extracommandsdisplay = Label(userframe, text="none")
+extracommandsdisplay.grid(row=2, column=1, sticky=W)
 
 extracommandsbutton = Button(userframe, text="[...]", command=functools.partial(launchopen, EXTRACOMMANDS, extracommandsdisplay))
-extracommandsbutton.grid(row=1, column=2)
+extracommandsbutton.grid(row=2, column=2)
 
-instrumentlabel = Label(userframe, text="Instrument:")
-instrumentlabel.grid(row=2, column=0, sticky=W)
+instrumentlabel = Label(userframe, text="Instrument Site Directory:")
+instrumentlabel.grid(row=3, column=0, sticky=W)
 
-instrumentdisplay = Label(userframe, text="[no folder selected]")
-instrumentdisplay.grid(row=2, column=1, sticky=W)
+instrumentdisplay = Label(userframe, text="lsst")
+instrumentdisplay.grid(row=3, column=1, sticky=W)
 
 instrumentbutton = Button(userframe, text="[...]", command=functools.partial(launchinstrumentopen, INSTRUMENT, instrumentdisplay))
-instrumentbutton.grid(row=2, column=2)
+instrumentbutton.grid(row=3, column=2)
 
 e2adcvar = IntVar()
 
 e2adccheckbox = Checkbutton(userframe, text="Run e2adc", command=updatee2adc, variable=e2adcvar)
-e2adccheckbox.grid(row=3, column=0, columnspan=2, sticky=W)
+e2adccheckbox.grid(row=4, column=0, columnspan=2, sticky=W)
+
+
+gridlabel = Label(userframe, text="Execution Site:")
+gridlabel.grid(row=5, column=0, sticky=W)
+gridVar = StringVar()
+gridVar.set("no")
+gridbutton1 = Radiobutton(userframe, text="Local", variable=gridVar, value="no", command=updategrid)
+gridbutton2 = Radiobutton(userframe, text="DiaGrid", variable=gridVar, value="diagrid", command=updategrid)
+gridbutton1.grid(row=6, column=0, columnspan=1, sticky=W)
+gridbutton2.grid(row=7, column=0, columnspan=1, sticky=W)
+checkpointlabel = Label(userframe, text="Number of Checkpoints: ")
+checkpointlabel.grid(row=7, column=1, sticky=W)
+checkpointVar = IntVar()
+checkpointVar.set(0)
+checkpointspinner = Spinbox(userframe, from_=0, to=100, textvariable=checkpointVar)
+checkpointspinner.grid(row=7, column=2, sticky=W)
+
 
 outputbutton = Button(userframe, text="Run Simulation", command=runuser)
-outputbutton.grid(row=4, column=0)
+outputbutton.grid(row=8, column=0)
 
 notebook.add(userframe, text="User")
 
