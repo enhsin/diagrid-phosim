@@ -509,7 +509,7 @@ void E2adc::writeFitsImage() {
     }
     if ( tarfile == 1 ) {
         std::ostringstream tarName;
-        tarName << instr << "_ " << obshistid << "_f"<< filter << "_" << chipid << "_E" << std::setfill('0') << std::setw(3) << exposureid << ".tar";
+        tarName << instr << "_" << obshistid << "_f"<< filter << "_" << chipid << "_E" << std::setfill('0') << std::setw(3) << exposureid << ".tar";
         std::cout<<"Tarring "<<tarName.str()<<std::endl;
         std::string tarCommand = "tar cf " + tarName.str() + " " + tarFiles + " --remove-files";
         system(tarCommand.c_str());
