@@ -86,7 +86,7 @@ def writeTrimDag(self,jobName,tc,nexp):
 
     trim.addProfile(Profile(namespace="dagman", key="POST", value="posttrim"))
     trim.addProfile(Profile(namespace="dagman", key="POST.PATH.posttrim", value=os.path.join(self.binDir,"diagrid","chip")))
-    arg='posttrim %s %d %d %s %d' % (self.observationID,tc,nexp,self.sedDir,checkpoint)
+    arg='posttrim %s %d %d %s %d %d' % (self.observationID,tc,nexp,self.sedDir,checkpoint,self.workDir)
     trim.addProfile(Profile(namespace="dagman", key="POST.ARGUMENTS", value=arg))
     self.dax.addJob(trim)
     return jobID
@@ -95,6 +95,7 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
     checkpoint=self.grid_opts.get('checkpoint', 12)
     observationID=self.observationID
     fid=observationID + '_' + cid + '_' + eid
+    fidfilt=observationID + '_f'+self.filt+'_' + cid + '_' + eid
     instrument=self.instrDir.split("/")[-1]
     for ckpt in range(checkpoint+1):
         fidckpt=fid+'_'+str(ckpt)
@@ -110,20 +111,20 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
         eval('raytrace'+str(ckpt)+'.uses(File("raytrace_'+observationID+'.tar"), link=Link.INPUT)')
         eval('raytrace'+str(ckpt)+'.uses(File("segmentation.txt"), link=Link.INPUT)') # will replace with SEDs
         if ckpt>0:
-            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt_'+str(ckpt-1)+'.fits.gz"), link=Link.INPUT)')
-            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp_'+str(ckpt-1)+'.fits.gz"), link=Link.INPUT)')
+            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fidfilt+'_ckptdt_'+str(ckpt-1)+'.fits.gz"), link=Link.INPUT)')
+            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fidfilt+'_ckptfp_'+str(ckpt-1)+'.fits.gz"), link=Link.INPUT)')
         if ckpt<checkpoint:
-            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptdt_'+str(ckpt)+'.fits.gz"), link=Link.OUTPUT, transfer=False, register=False)')
-            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fid+'_ckptfp_'+str(ckpt)+'.fits.gz"), link=Link.OUTPUT, transfer=False, register=False)')
+            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fidfilt+'_ckptdt_'+str(ckpt)+'.fits.gz"), link=Link.OUTPUT, transfer=False, register=False)')
+            eval('raytrace'+str(ckpt)+'.uses(File("'+instrument+'_e_'+fidfilt+'_ckptfp_'+str(ckpt)+'.fits.gz"), link=Link.OUTPUT, transfer=False, register=False)')
         if ckpt==checkpoint:
-            fileName=instrument+'_e_'+fid+'.fits.gz'
+            fileName=instrument+'_e_'+fidfilt+'.fits.gz'
             if run_e2adc:
                 eval('raytrace'+str(ckpt)+'.uses(File(fileName), link=Link.OUTPUT, transfer=False, register=False)')
             else:
                 eval('raytrace'+str(ckpt)+'.uses(File(fileName), link=Link.OUTPUT)')
                 eval('raytrace'+str(ckpt)+'.addProfile(Profile(namespace="dagman", key="POST", value="postraytrace"))')
                 eval('raytrace'+str(ckpt)+'.addProfile(Profile(namespace="dagman", key="POST.PATH.postraytrace", value=os.path.join(self.binDir,"diagrid","chip")))')
-                arg='postraytrace %s %s %s %s %s' % (observationID,self.filt,cid,eid,self.outputDir)
+                arg='postraytrace %s %s %s %s %s %s' % (observationID,self.filt,cid,eid,self.workDir,instrument)
                 eval('raytrace'+str(ckpt)+'.addProfile(Profile(namespace="dagman", key="POST.ARGUMENTS", value=arg))')
 
         eval('raytrace'+str(ckpt)+'.addProfile(Profile(namespace="dagman", key="PRE", value=os.path.join(self.binDir,"diagrid","chip")))')
@@ -154,15 +155,11 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
         self.dax.addFile(fp)
         e2adc.uses( File('segmentation.txt'), link=Link.INPUT)
         e2adc.uses( File('focalplanelayout.txt'), link=Link.INPUT)
-        e2adc.uses( File('%s_e_%s.fits.gz' % (instrument,fid)), link=Link.INPUT)
-        segfile=os.path.join(self.instrDir,'segmentation.txt')
-        for line in open(segfile):
-            aid=line.split()[0]
-            if cid in line and aid != cid:
-                e2adc.uses(File(instrument+'_a_'+observationID+'_'+aid+'_'+eid+'.fits.gz'), link=Link.OUTPUT)
+        e2adc.uses( File('%s_e_%s.fits.gz' % (instrument,fidfilt)), link=Link.INPUT)
+        e2adc.uses(File(instrument+'_'+fidfilt+'.tar'), link=Link.OUTPUT)
         e2adc.addProfile(Profile(namespace="dagman", key="POST", value="poste2adc"))
         e2adc.addProfile(Profile(namespace="dagman", key="POST.PATH.poste2adc", value=os.path.join(self.binDir,"diagrid","chip")))
-        arg='poste2adc %s %s %s %s %s %s' % (observationID,self.filt,cid,eid,self.outputDir,self.instrDir)
+        arg='poste2adc %s %s %s %s %s %s' % (observationID,self.filt,cid,eid,self.workDir,instrument)
         e2adc.addProfile(Profile(namespace="dagman", key="POST.ARGUMENTS", value=arg))
         self.dax.addJob(e2adc)
         eval('self.dax.depends(parent=raytrace'+str(checkpoint)+',child=e2adc)')

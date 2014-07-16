@@ -210,6 +210,7 @@ class Observation {
     long nsnap;
     std::vector<int> ghost;
     int flatdir;
+    int tarfile;
     int date;
     std::string devtype;
     std::vector<int> feaflag;

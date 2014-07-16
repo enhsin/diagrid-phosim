@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os, subprocess, shutil
-import tarfile
+import tarfile, glob
 
 def runProgram(command, binDir=None, argstring=None):
     myCommand = command
@@ -12,15 +12,24 @@ def runProgram(command, binDir=None, argstring=None):
     if subprocess.call(myCommand, shell=True) != 0:
         raise RuntimeError("Error running %s" % myCommand)
 
+def cleanupScreens(observationID,workDir):
+    subs=glob.glob(workDir+'/'+'raytrace_'+observationID+'_*')
+    if len(subs)==0:
+        files=['objectcatalog_'+observationID+'.pars','tracking_'+observationID+'.pars','raytrace_'+observationID+'.tar']
+        for f in files:
+            if os.path.exists(workDir+'/'+f):
+                os.remove(workDir+'/'+f)
+
 def posttrim(argv):
     obsid=argv[2]
     tc=argv[3]
     nexp=int(float(argv[4]))
     sedDir=argv[5]
     checkpoint=int(float(argv[6]))
-    workDir=os.path.join(os.getcwd(),'../scratch')
+    workDir=argv[7]
+    scratchDir=os.path.join(os.getcwd(),'../scratch')
 
-    os.chdir(workDir)
+    os.chdir(scratchkDir)
     chipID=[]
     for line in open('trim_'+obsid+'_'+tc+'.pars'):
         if "chipid" in line:
@@ -55,14 +64,18 @@ def posttrim(argv):
         else:
             sys.exit(1)
 
+    f=os.path.join(workDir,'trim_'+obsid+'_'+tc+'.pars')
+    if os.path.exists(f):
+        os.remove(f)
+
 def preraytrace(argv):
     observationID=argv[2]
     jobID=argv[3]
     cid=argv[4]
-    workDir=os.path.join(os.getcwd(),'../scratch')
+    scratchDir=os.path.join(os.getcwd(),'../scratch')
 
     if os.path.exists('raytrace_'+jobID+'.sub'):
-        seds=os.path.join(workDir,'trimcatalog_'+observationID+'_'+cid+'_uniq.pars')
+        seds=os.path.join(scratchDir,'trimcatalog_'+observationID+'_'+cid+'_uniq.pars')
         if os.path.exists(seds):
             newsub=open('raytrace_'+jobID+'.sub.new','w')
             newsub.write(open('raytrace_'+jobID+'.sub').read().replace('segmentation.txt',open(seds).read()))
@@ -76,13 +89,19 @@ def postraytrace(argv):
     filt=argv[3]
     cid=argv[4]
     eid=argv[5]
-    outputDir=argv[6]
-    workDir=os.path.join(os.getcwd(),'../scratch')
+    workDir=argv[6]
+    instrument=argv[7]
+    scratchDir=os.path.join(os.getcwd(),'../scratch')
+    fid=observationID+'_'+cid+'_'+eid
 
-    eImage=os.path.join(workDir,'lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz')
-    eImageRename=os.path.join(outputDir,'lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz')
+    eImage=os.path.join(scratchDir,instrument+'_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz')
     if os.path.exists(eImage):
-        shutil.move(eImage,eImageRename)
+        if os.path.getsize(eImage)>0:
+            for f in glob.glob(workDir+'/raytrace_'+fid+'*.pars') :
+                os.remove(f)
+            cleanupScreens(observationID,workDir)
+        else:
+            sys.exit(1)
     else:
         sys.exit(1)
 
@@ -91,32 +110,21 @@ def poste2adc(argv):
     filt=argv[3]
     cid=argv[4]
     eid=argv[5]
-    outputDir=argv[6]
-    instrDir=argv[7]
-    workDir=os.path.join(os.getcwd(),'../scratch')
+    workDir=argv[6]
+    instrument=argv[7]
+    scratchDir=os.path.join(os.getcwd(),'../scratch')
+    fid=observationID + '_' + cid + '_' + eid
 
-    os.chdir(workDir)
-    tarFiles=''
-    segfile=os.path.join(instrDir,'segmentation.txt')
-    for line in open(segfile):
-        aid=line.split()[0]
-        if cid in line and aid != cid:
-            rawImage='lsst_a_'+observationID+'_'+aid+'_'+eid+'.fits.gz'
-            rawImageRename=outputDir+'/lsst_a_'+observationID+'_f'+filt+'_'+aid+'_'+eid+'.fits.gz'
-            if os.path.exists(rawImage):
-                shutil.move(rawImage,rawImageRename)
-                tarFiles+=rawImageRename.split('/')[-1]+' '
-            else:
-                sys.exit(1)
-
-    eImage='lsst_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz'
-    eImageRename=os.path.join(outputDir,'lsst_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz')
-    shutil.move(eImage,eImageRename)
-    tarFiles+=(eImageRename.split('/')[-1])
-
-    os.chdir(outputDir)
-    tar='lsst_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.tar'
-    runProgram('tar cf '+tar+' '+tarFiles+' --remove-files')
+    tarFile=os.path.join(scratchDir,instrument+'_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.tar')
+    if os.path.exists(tarFile):
+        if os.path.getsize(tarFile)>0:
+            if os.path.exists(workDir+'/e2adc_'+fid+'.pars'):
+                os.remove(workDir+'/e2adc_'+fid+'.pars')
+            cleanupScreens(observationID,workDir)
+        else:
+            sys.exit(1)
+    else:
+        sys.exit(1)
 
 
 function=sys.argv[1]

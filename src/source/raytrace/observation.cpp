@@ -998,6 +998,7 @@ int Observation::parser () {
     miescatter_scat = 0.135;
     totalseeing = 0.67;
     flatdir = 0;
+    tarfile = 0;
     atmdebug = 0;
     large_scale = 1.0;
     coarse_scale = 1.0;
@@ -1171,6 +1172,7 @@ int Observation::parser () {
         readText::get(line, "backbuffer", backBuffer);// not exposed
         readText::get(line, "date", date);// not exposed
         readText::get(line, "flatdir", flatdir);// not exposed
+        readText::get(line, "tarfile", tarfile);// not exposed
         readText::get(line, "atmdebug", atmdebug);// not exposed
         readText::get(line, "large_grid", large_grid);// not exposed
         readText::get(line, "coarse_grid", coarse_grid);// not exposed
@@ -1406,7 +1408,7 @@ int Observation::parser () {
     std::ostringstream outfile;
     unsigned pos = instrdir.rfind("/")+1;
     for (unsigned i = pos; i<instrdir.length(); i++) outfile<<instrdir[i];
-    outfile << "_e_"  << obshistid << "_" << chipid << "_E" << std::setfill('0') << std::setw(3) << pairid;
+    outfile << "_e_"  << obshistid << "_f"<< filter << "_" << chipid << "_E" << std::setfill('0') << std::setw(3) << pairid;
     outputfilename = outfile.str();
 
     if (flatdir == 1) {
@@ -1414,13 +1416,15 @@ int Observation::parser () {
         bindir  =  ".";
     }
 
-    std::ostringstream tarName;
-    tarName << "raytrace_" << obshistid << ".tar";
-    std::ifstream tarFile(tarName.str().c_str());
-    if (tarFile.good()) {
-        std::cout<<"Untarring "<<tarName.str()<<std::endl;
-        std::string tarCommand = "tar xf " + tarName.str();
-        system(tarCommand.c_str());
+    if (tarfile == 1) {
+       std::ostringstream tarName;
+       tarName << "raytrace_" << obshistid << ".tar";
+       std::ifstream tarFile(tarName.str().c_str());
+       if (tarFile.good()) {
+           std::cout<<"Untarring "<<tarName.str()<<std::endl;
+           std::string tarCommand = "tar xf " + tarName.str();
+           system(tarCommand.c_str());
+       }
     }
 
     focalplanefile = instrdir + "/focalplanelayout.txt";

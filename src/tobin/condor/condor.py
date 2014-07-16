@@ -40,6 +40,7 @@ def writeSubmit(self, job, jobName, fid='none', ckpt=0):
     submitfile.write('notification = NEVER\n')
 
     instrument=self.instrDir.split("/")[-1]
+    fidfilt=fid.replace(self.observationID,self.observationID+'_f'+self.filt)
     if job == 'raytrace':
         submitfile.write('transfer_input_files = \\\n')
         submitfile.write('cloudscreen_%s_1.fits.gz, \\\n' % self.observationID)
@@ -65,8 +66,8 @@ def writeSubmit(self, job, jobName, fid='none', ckpt=0):
         submitfile.write('tracking_%s.pars' % self.observationID)
 
         if ckpt>0:
-            submitfile.write(', %s_e_%s_ckptdt_%d.fits.gz' % (instrument,fid,ckpt-1))
-            submitfile.write(', %s_e_%s_ckptfp_%d.fits.gz' % (instrument,fid,ckpt-1))
+            submitfile.write(', %s_e_%s_ckptdt_%d.fits.gz' % (instrument,fidfilt,ckpt-1))
+            submitfile.write(', %s_e_%s_ckptfp_%d.fits.gz' % (instrument,fidfilt,ckpt-1))
 
     else:
         if job == 'trim':
@@ -78,7 +79,7 @@ def writeSubmit(self, job, jobName, fid='none', ckpt=0):
         elif job == 'e2adc':
             submitfile.write('transfer_input_files = %s/segmentation.txt, ' % self.instrDir)
             submitfile.write('%s/focalplanelayout.txt, ' % self.instrDir)
-            submitfile.write('%s_e_%s.fits.gz\n' % (instrument,fid))
+            submitfile.write('%s_e_%s.fits.gz\n' % (instrument,fidfilt))
         submitfile.write('Queue 1\n')
 
     submitfile.close()
@@ -95,6 +96,7 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
     checkpoint=self.grid_opts.get('checkpoint', 12)
     observationID=self.observationID
     fid=observationID + '_' + cid + '_' + eid
+    instrument=self.instrDir.split("/")[-1]
     for ckpt in range(checkpoint+1):
         fidckpt=fid+'_'+str(ckpt)
         self.dagfile.write('JOB raytrace_%s %s/raytrace_%s.submit\n' % (fidckpt,self.workDir,fidckpt))
@@ -106,9 +108,11 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
 
         if ckpt==checkpoint:
             if run_e2adc:
-                self.dagfile.write('SCRIPT POST raytrace_%s %s/condor/chip lastraytracecleanup %s %d %s\n' % (fidckpt,self.phosimDir,fid,ckpt,self.workDir))
+                self.dagfile.write('SCRIPT POST raytrace_%s %s/condor/chip lastraytracecleanup %s %s %s %s %d %s %s\n' %
+                        (fidckpt,self.phosimDir,observationID,self.filt,cid,eid,ckpt,self.workDir,instrument))
         else:
-            self.dagfile.write('SCRIPT POST raytrace_%s %s/condor/chip raytracecleanup %s %d %s\n' % (fidckpt,self.phosimDir,fid,ckpt,self.workDir))
+            self.dagfile.write('SCRIPT POST raytrace_%s %s/condor/chip raytracecleanup %s %s %s %s %d %s %s\n' %
+                    (fidckpt,self.phosimDir,observationID,self.filt,cid,eid,ckpt,self.workDir,instrument))
 
         writeSubmit(self,'raytrace','raytrace_'+fidckpt,fid,ckpt)
         pfile=open('raytrace_'+fidckpt+'.pars','w')
@@ -119,13 +123,13 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
     if run_e2adc:
         self.dagfile.write('JOB e2adc_%s %s/e2adc_%s.submit\n' % (fid,self.workDir,fid))
         self.dagfile.write('RETRY e2adc_%s 3\n' % fid)
-        self.dagfile.write('SCRIPT POST e2adc_%s %s/condor/chip poste2adc %s %s %s %s %s %s %s\n' %
-                      (fid,self.phosimDir,observationID,self.filt,cid,eid,self.outputDir,self.instrDir,self.workDir))
+        self.dagfile.write('SCRIPT POST e2adc_%s %s/condor/chip poste2adc %s %s %s %s %s %s %s %s\n' %
+                      (fid,self.phosimDir,observationID,self.filt,cid,eid,self.outputDir,self.instrDir,self.workDir,instrument))
         self.dagfile.write('PARENT raytrace_%s_%d CHILD e2adc_%s\n' % (fid,checkpoint,fid))
         writeSubmit(self,'e2adc','e2adc_'+fid,fid)
     else:
-        self.dagfile.write('SCRIPT POST raytrace_%s_%d %s/condor/chip postraytrace %s %s %s %s %s %s %d\n' %
-                      (fid,checkpoint,self.phosimDir,observationID,self.filt,cid,eid,self.outputDir,self.workDir,checkpoint))
+        self.dagfile.write('SCRIPT POST raytrace_%s_%d %s/condor/chip postraytrace %s %s %s %s %d %s %s %s\n' %
+                      (fid,checkpoint,self.phosimDir,observationID,self.filt,cid,eid,checkpoint,self.workDir,self.outputDir,instrument))
     os.remove('raytrace_'+fid+'.pars')
 
 def submitDag(self):

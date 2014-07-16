@@ -45,6 +45,7 @@ public:
     double vistime;
     double exptime;
     long nsnap;
+    int filter;
 
     //individual amp
     std::vector<std::string> outchipid;
@@ -74,5 +75,6 @@ public:
     std::vector<float> adcmap;
     std::vector<unsigned int> hotpixelmap;
     int flatdir;
+    int tarfile;
 
 };

@@ -255,9 +255,9 @@ void zernikes  (double *zernike_r, double *zernike_phi, double *zernike_r_grid, 
     double r, phi;
     long i;
 
-    for (i = 0;i<numelements;i++) {
+    for (i = 0;i < numelements; i++) {
 
-        r=((double)i+1)/((double)numelements);
+        r=((double)i)/((double)numelements - 1);
         phi=((double)i)/((double)numelements)*2*M_PI;
 
         *(zernike_r_grid + i) = r;
@@ -436,4 +436,3 @@ void chebyshevs (double *r_grid, double *phi_grid, double *chebyshev, double *ch
         }
     }
 }
-

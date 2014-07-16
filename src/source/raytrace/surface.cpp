@@ -56,8 +56,10 @@ void Surface::asphere (long surfaceIndex, long points) {
 
     for (long i = 0; i < points; i++) {
 
-        radius[points*surfaceIndex + i] = innerRadius[surfaceIndex] + static_cast<double>(i)*
-            (outerRadius[surfaceIndex] - innerRadius[surfaceIndex])/(static_cast<double>(points) - 1);
+        radius[points*surfaceIndex + i] = sqrt( (outerRadius[surfaceIndex]*outerRadius[surfaceIndex] -
+                                                 innerRadius[surfaceIndex]*innerRadius[surfaceIndex])*
+                                                (static_cast<double>(i))/(static_cast<double>(points) - 1) +
+                                                innerRadius[surfaceIndex]*innerRadius[surfaceIndex] );
 
         if (radiusofcurv != 0) {
 

@@ -1194,7 +1194,7 @@ int Image::goldenBisectSurface(double a, double b, double c, double *z, Vector p
 int Image::getIntercept(double x, double y, double *z, long surfaceIndex) {
 
     double r, phi;
-    double uu, vv, ww;
+    double uu, ww;
     double dx, dy;
 
     dx = x - surface.centerx[surfaceIndex];
@@ -1203,8 +1203,9 @@ int Image::getIntercept(double x, double y, double *z, long surfaceIndex) {
     if ((r > surface.radius[SURFACE_POINTS*surfaceIndex + SURFACE_POINTS - 1]) ||
         (r < surface.radius[SURFACE_POINTS*surfaceIndex + 0])) return(1);
 
-    vvint = find_linear(&surface.radius[SURFACE_POINTS*surfaceIndex], SURFACE_POINTS, r, &vv);
-    *z = interpolate_linear(&surface.profile[SURFACE_POINTS*surfaceIndex], vvint, vv);
+    find(&surface.radius[SURFACE_POINTS*surfaceIndex], SURFACE_POINTS, r, &vvint);
+    *z = interpolate(&surface.profile[SURFACE_POINTS*surfaceIndex], &surface.radius[SURFACE_POINTS*surfaceIndex],
+                     r, vvint);
 
     wwint = find_linear(perturbation.zernike_r_grid, SURFACE_POINTS, r/surface.rmax[surfaceIndex], &ww);
     phi = atan2(dy, dx);
@@ -1222,8 +1223,8 @@ int Image::getIntercept(double x, double y, double *z, long surfaceIndex) {
 int Image::getDeltaIntercept(double x, double y, double *z, long surfaceIndex) {
 
     double r, phi;
-    double uu, vv, ww;
-    long uuint, vvint, wwint;
+    double uu, ww;
+    long uuint, wwint;
     double dx, dy;
     int miss;
 
@@ -1232,7 +1233,9 @@ int Image::getDeltaIntercept(double x, double y, double *z, long surfaceIndex) {
     dx = x - surface.centerx[surfaceIndex];
     dy = y - surface.centery[surfaceIndex];
     r = sqrt(dx*dx + dy*dy);
-    vvint = find_linear(&surface.radius[SURFACE_POINTS*surfaceIndex], SURFACE_POINTS, r, &vv);
+
+
+    find(&surface.radius[SURFACE_POINTS*surfaceIndex], SURFACE_POINTS, r, &vvint);
     if ((r > surface.radius[SURFACE_POINTS*surfaceIndex + SURFACE_POINTS - 1]) ||
         (r < surface.radius[SURFACE_POINTS*surfaceIndex + 0])) miss=1;
     *z = 0.0;

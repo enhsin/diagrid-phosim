@@ -47,12 +47,10 @@ def jobChip(observationID, cid, eid, filt, outputDir, binDir, instrDir, instrume
         for line in open(segfile):
             aid=line.split()[0]
             if cid in line and aid != cid:
-                rawImage=instrument+'_a_'+observationID+'_'+aid+'_'+eid+'.fits.gz'
-                rawImageRename=outputDir+'/'+instrument+'_a_'+observationID+'_f'+filt+'_'+aid+'_'+eid+'.fits.gz'
-                shutil.move(rawImage,rawImageRename)
-    eImage=instrument+'_e_'+observationID+'_'+cid+'_'+eid+'.fits.gz'
-    eImageRename=outputDir+'/'+instrument+'_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz'
-    shutil.move(eImage,eImageRename)
+                rawImage=instrument+'_a_'+observationID+'_f'+filt+'_'+aid+'_'+eid+'.fits.gz'
+                shutil.move(rawImage,outputDir+'/'+rawImage)
+    eImage=instrument+'_e_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.fits.gz'
+    shutil.move(eImage,outputDir+'/'+eImage)
 
 ## runProgram function calls each of the phosim programs using subprocess.call
 #  it raises an exception and aborts if the return code is non-zero.
@@ -129,6 +127,7 @@ class PhosimFocalplane(object):
         self.sedDir = opt.sedDir
         self.imageDir = opt.imageDir
         self.flatdir = False
+        self.tarfile = False
         self.extraCommands = None
         self.instanceCatalog = None
         self.userCatalog = None
@@ -142,8 +141,9 @@ class PhosimFocalplane(object):
         if self.grid == 'condor':
             assert 'universe' in self.grid_opts
             self.flatdir=True if self.grid_opts['universe'] == 'vanilla' else False
-        elif self.grid == 'diagrid': 
-	    self.flatdir=True
+        elif self.grid == 'diagrid':
+            self.flatdir=True
+            self.tarfile=True
 
      ## doPreproc is a method to run all of the non-chip steps.
      def doPreproc(self, instanceCatalog, extraCommands, sensor):
@@ -304,6 +304,8 @@ class PhosimFocalplane(object):
         pfile.write("domewave %g\n" % self.domewav)
         if self.flatdir:
              pfile.write("flatdir 1\n")
+        if self.tarfile:
+             pfile.write("tarfile 1\n")
         pfile.close()
 
      ## writeCatalogList simply makes a list of possible

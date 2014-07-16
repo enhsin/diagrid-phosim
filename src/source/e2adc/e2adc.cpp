@@ -42,7 +42,9 @@ void E2adc::setup() {
 
     chipid = "R22_S11";
     instrdir = "../data/lsst";
+    filter = 0;
     flatdir = 0;
+    tarfile = 0;
     readorder = 1;
     serialcte = 0.999995;
     parallelcte = 1.0;
@@ -60,6 +62,8 @@ void E2adc::setup() {
         std::string line(pars[t]);
         readText::get(line, "instrdir", instrdir);
         readText::get(line, "flatdir", flatdir);
+        readText::get(line, "tarfile", tarfile);
+        readText::get(line, "filter", filter);
         readText::get(line, "nonlinear", nonlinear);
         readText::get(line, "welldepth", well_depth);
         readText::get(line, "parallelcte", parallelcte);
@@ -133,7 +137,7 @@ void E2adc::setup() {
         exptime = (vistime - (nsnap -1 )*devvalue)/nsnap;
     }
 
-    infile << instr << "_e_"  << obshistid << "_" << chipid << "_E" << std::setfill('0') << std::setw(3) << exposureid << ".fits.gz";
+    infile << instr << "_e_"  << obshistid << "_f"<< filter << "_" << chipid << "_E" << std::setfill('0') << std::setw(3) << exposureid << ".fits.gz";
     read_fits_image(emap, onaxes, infile.str());
     adcmap.reserve(onaxes[0]*onaxes[1]);
 
@@ -447,7 +451,7 @@ void E2adc::convertADC() {
 
 void E2adc::writeFitsImage() {
 
-
+    std::string tarFiles(infile.str());
     for (long l = 0; l < namp; l++) {
         keyword_map keywords;
         keywords.insert(keyword_map::value_type("BZERO", keyProperties("TLONG", "32768", "offset data range to that of unsigned short")));
@@ -496,13 +500,20 @@ void E2adc::writeFitsImage() {
         }
 
         std::ostringstream outfile;
-        outfile << "!" << instr << "_a_" << obshistid << "_" << outchipid[l] << "_E" << std::setfill('0') << std::setw(3) << exposureid << ".fits.gz";
+        outfile << instr << "_a_" << obshistid << "_f"<< filter << "_" << outchipid[l] << "_E" << std::setfill('0') << std::setw(3) << exposureid << ".fits.gz";
         int fflag[] = {1, serialread[l], parallelread[l]};
         if (readorder == 0) fflag[0] = 0;
         float dcrpix[] = {-outminx[l], -outminy[l]};
-        write_fits_image_cphead(fullReadoutMap[l], ny[l], nx[l], outfile.str(), infile.str(), dcrpix, fflag, keywords);
+        write_fits_image_cphead(fullReadoutMap[l], ny[l], nx[l], "!"+outfile.str(), infile.str(), dcrpix, fflag, keywords);
+        tarFiles += " " + outfile.str();
     }
-
+    if ( tarfile == 1 ) {
+        std::ostringstream tarName;
+        tarName << instr << obshistid << "_f"<< filter << "_" << chipid << "_E" << std::setfill('0') << std::setw(3) << exposureid << ".tar";
+        std::cout<<"Tarring "<<tarName.str()<<std::endl;
+        std::string tarCommand = "tar cf " + tarName.str() + " " + tarFiles + " --remove-files";
+        system(tarCommand.c_str());
+    }
 }
 
 
