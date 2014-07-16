@@ -15,10 +15,13 @@ def runProgram(command, binDir=None, argstring=None):
 def cleanupScreens(observationID,workDir):
     subs=glob.glob(workDir+'/'+'raytrace_'+observationID+'_*')
     if len(subs)==0:
-        files=['objectcatalog_'+observationID+'.pars','tracking_'+observationID+'.pars','raytrace_'+observationID+'.tar']
+        files=['objectcatalog_'+observationID+'.pars','tracking_'+observationID+'.pars','raytrace_'+observationID+'.tar','phosim_'+observationID+'.dax']
         for f in files:
             if os.path.exists(workDir+'/'+f):
                 os.remove(workDir+'/'+f)
+        for f in glob.glob(workDir+'/trimcatalog_'+observationID+'_*') :
+            os.remove(f)
+
 
 def posttrim(argv):
     obsid=argv[2]
@@ -29,7 +32,7 @@ def posttrim(argv):
     workDir=argv[7]
     scratchDir=os.path.join(os.getcwd(),'../scratch')
 
-    os.chdir(scratchkDir)
+    os.chdir(scratchDir)
     chipID=[]
     for line in open('trim_'+obsid+'_'+tc+'.pars'):
         if "chipid" in line:
@@ -61,6 +64,8 @@ def posttrim(argv):
                                 pfile=open('raytrace_'+fidckpt+'.pars','a')
                                 pfile.write(open('trimcatalog_'+obsid+'_'+cid+'.pars').read())
                                 pfile.close()
+            else:
+                sys.exit(1) 
         else:
             sys.exit(1)
 
@@ -118,6 +123,8 @@ def poste2adc(argv):
     tarFile=os.path.join(scratchDir,instrument+'_'+observationID+'_f'+filt+'_'+cid+'_'+eid+'.tar')
     if os.path.exists(tarFile):
         if os.path.getsize(tarFile)>0:
+            for f in glob.glob(workDir+'/raytrace_'+fid+'*.pars') :
+                os.remove(f)
             if os.path.exists(workDir+'/e2adc_'+fid+'.pars'):
                 os.remove(workDir+'/e2adc_'+fid+'.pars')
             cleanupScreens(observationID,workDir)

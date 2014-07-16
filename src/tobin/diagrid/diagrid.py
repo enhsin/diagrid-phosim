@@ -86,7 +86,7 @@ def writeTrimDag(self,jobName,tc,nexp):
 
     trim.addProfile(Profile(namespace="dagman", key="POST", value="posttrim"))
     trim.addProfile(Profile(namespace="dagman", key="POST.PATH.posttrim", value=os.path.join(self.binDir,"diagrid","chip")))
-    arg='posttrim %s %d %d %s %d %d' % (self.observationID,tc,nexp,self.sedDir,checkpoint,self.workDir)
+    arg='posttrim %s %d %d %s %d %s' % (self.observationID,tc,nexp,self.sedDir,checkpoint,self.workDir)
     trim.addProfile(Profile(namespace="dagman", key="POST.ARGUMENTS", value=arg))
     self.dax.addJob(trim)
     return jobID

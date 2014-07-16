@@ -73,10 +73,11 @@ def phosimpyothercommands():
 	return ["-o", outputdir, "-w", workdir, "-b", bindir, 
 		"-d", datadir, "--sed="+seddir, "--image="+imagedir]
 
-def runphosimpy(instancecatalog, extracommands, e2adcflag, log, grid="no", ckpt=0, instrument="lsst"):
+def runphosimpy(instancecatalog, extracommands, e2adcflag, log, grid="no", ckpt=0, instrument="lsst", sensor="all"):
 	
 	command = ["xterm", "-hold", "-title", "phosimrun", "-e", "python", phosimpy, instancecatalog, "-c", extracommands, 
-		"-e", e2adcflag, "-g", grid, "--checkpoint="+str(ckpt), "-i", instrument] + phosimpyothercommands()
+		"-e", e2adcflag, "-g", grid, "--checkpoint="+str(ckpt), "-i", instrument,
+		"-s", sensor] + phosimpyothercommands()
 	
 	print command
 	
@@ -84,8 +85,9 @@ def runphosimpy(instancecatalog, extracommands, e2adcflag, log, grid="no", ckpt=
 
 def runuser():
 	ckptnum=checkpointVar.get()
+	sensorstr=sensorVar.get()
 	runphosimpy(instancecatalog=options[INSTANCECATALOG], extracommands=options[EXTRACOMMANDS], e2adcflag=options[E2ADC], log=log, 
-		instrument=options[INSTRUMENT],grid=options[GRID],ckpt=ckptnum)
+		instrument=options[INSTRUMENT],sensor=sensorstr,grid=options[GRID],ckpt=ckptnum)
 	
 def runcalibration():
 	cats = calibrationinstancecatalogs[calibrationinstancecatalog.get()]
@@ -151,30 +153,37 @@ instrumentdisplay.grid(row=3, column=1, sticky=W)
 instrumentbutton = Button(userframe, text="[...]", command=functools.partial(launchinstrumentopen, INSTRUMENT, instrumentdisplay))
 instrumentbutton.grid(row=3, column=2)
 
+sensorlabel = Label(userframe, text="Sensor:")
+sensorlabel.grid(row=4, column=0, sticky=W)
+sensorVar = StringVar()
+sensorVar.set("all")
+sensorentry = Entry(userframe, text="all", textvariable=sensorVar)
+sensorentry.grid(row=4, column=1)
+
 e2adcvar = IntVar()
 
 e2adccheckbox = Checkbutton(userframe, text="Run e2adc", command=updatee2adc, variable=e2adcvar)
-e2adccheckbox.grid(row=4, column=0, columnspan=2, sticky=W)
+e2adccheckbox.grid(row=5, column=0, columnspan=2, sticky=W)
 
 
 gridlabel = Label(userframe, text="Execution Site:")
-gridlabel.grid(row=5, column=0, sticky=W)
+gridlabel.grid(row=6, column=0, sticky=W)
 gridVar = StringVar()
 gridVar.set("no")
 gridbutton1 = Radiobutton(userframe, text="Local", variable=gridVar, value="no", command=updategrid)
 gridbutton2 = Radiobutton(userframe, text="DiaGrid", variable=gridVar, value="diagrid", command=updategrid)
-gridbutton1.grid(row=6, column=0, columnspan=1, sticky=W)
-gridbutton2.grid(row=7, column=0, columnspan=1, sticky=W)
+gridbutton1.grid(row=7, column=0, columnspan=1, sticky=W)
+gridbutton2.grid(row=8, column=0, columnspan=1, sticky=W)
 checkpointlabel = Label(userframe, text="Number of Checkpoints: ")
-checkpointlabel.grid(row=7, column=1, sticky=W)
+checkpointlabel.grid(row=8, column=1, sticky=W)
 checkpointVar = IntVar()
 checkpointVar.set(0)
 checkpointspinner = Spinbox(userframe, from_=0, to=100, textvariable=checkpointVar)
-checkpointspinner.grid(row=7, column=2, sticky=W)
+checkpointspinner.grid(row=8, column=2, sticky=W)
 
 
 outputbutton = Button(userframe, text="Run Simulation", command=runuser)
-outputbutton.grid(row=8, column=0)
+outputbutton.grid(row=9, column=0)
 
 notebook.add(userframe, text="User")
 
