@@ -82,7 +82,7 @@ def writeTrimDag(self,jobName,tc,nexp):
     for line in open(jobName+'.pars'):
         if "chipid" in line:
             cid=line.split()[2]
-            trim.uses( File('trimcatalog_'+self.observationID+'_'+cid+'.pars'), link=Link.OUTPUT)
+            trim.uses( File('trimcatalog_'+self.observationID+'_'+cid+'.pars'), link=Link.OUTPUT, transfer=False, register=False)
 
     trim.addProfile(Profile(namespace="dagman", key="POST", value="posttrim"))
     trim.addProfile(Profile(namespace="dagman", key="POST.PATH.posttrim", value=os.path.join(self.binDir,"diagrid","chip")))
@@ -135,6 +135,7 @@ def writeRaytraceDag(self,cid,eid,tc,run_e2adc):
         if ckpt==0:
             trim=self.dax.getJob(self.trimJobID[tc])
             eval('self.dax.depends(parent=trim,child=raytrace'+str(ckpt)+')')
+            eval('raytrace'+str(ckpt)+'.uses(File("trimcatalog_'+observationID+'_'+cid+'.pars"), link=Link.INPUT)')
         else:
             eval('self.dax.depends(parent=raytrace'+str(ckpt-1)+',child=raytrace'+str(ckpt)+')')
             if ckpt>1:

@@ -19,8 +19,6 @@ def cleanupScreens(observationID,workDir):
         for f in files:
             if os.path.exists(workDir+'/'+f):
                 os.remove(workDir+'/'+f)
-        for f in glob.glob(workDir+'/trimcatalog_'+observationID+'_*') :
-            os.remove(f)
 
 
 def posttrim(argv):

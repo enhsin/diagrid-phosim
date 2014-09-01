@@ -28,8 +28,10 @@ imagedir = os.path.join(datadir, "images")
 phosimpy = os.path.join(bindir, "phosim.py")
 validationdir = os.path.join(phosimdir, "validation")
 validationscriptsdir = os.path.join(validationdir, "scripts")
-outputdir = os.path.join(currentdir, "output")
-workdir = os.path.join(currentdir, "work")
+#outputdir = os.path.join(currentdir, "output")
+#workdir = os.path.join(currentdir, "work")
+outputdir = currentdir
+workdir = currentdir
 calibrationfolders = [os.path.join(exampledir, "biases"), os.path.join(exampledir, "darks"), os.path.join(exampledir, "flats")]
 if not os.path.exists(outputdir):
 	os.mkdir(outputdir)
@@ -45,7 +47,6 @@ INSTRUMENT = "instrument"
 GRID = "grid"
 options = {INSTANCECATALOG:"", EXTRACOMMANDS:"none", E2ADC:"0", INSTRUMENT:"lsst", GRID:"no"}
 
-log = open("output.log", "w")
 
 def openmethod(paths, optionsindex=None, label=None):
 	if len(paths) != 0:
@@ -55,7 +56,8 @@ def openmethod(paths, optionsindex=None, label=None):
 		options[optionsindex] = path
 
 def launchworkspace():
-	browserapp.threadwindow(basefolder=[workspacedir, outputdir], basefoldername=["Workspace", "Output"], basefoldermakedirs=True, openmode=False)
+	#browserapp.threadwindow(basefolder=[workspacedir, outputdir], basefoldername=["Workspace", "Output"], basefoldermakedirs=True, openmode=False)
+	browserapp.threadwindow(basefolder=[workspacedir], basefoldername=["Workspace"], basefoldermakedirs=True, openmode=False)
 
 def launchopen(optionsindex, label):
 	browserapp.threadwindow(basefolder=[workspacedir, exampledir, validationdir, phosimdir], basefoldername=["Workspace", "Examples", "Validation", "Phosim"], basefoldermakedirs=True, openmode=True, openmethod=functools.partial(openmethod, optionsindex=optionsindex, label=label))
@@ -73,7 +75,7 @@ def phosimpyothercommands():
 	return ["-o", outputdir, "-w", workdir, "-b", bindir, 
 		"-d", datadir, "--sed="+seddir, "--image="+imagedir]
 
-def runphosimpy(instancecatalog, extracommands, e2adcflag, log, grid="no", ckpt=0, instrument="lsst", sensor="all"):
+def runphosimpy(instancecatalog, extracommands, e2adcflag, grid="no", ckpt=0, instrument="lsst", sensor="all"):
 	
 	command = ["xterm", "-hold", "-title", "phosimrun", "-e", "python", phosimpy, instancecatalog, "-c", extracommands, 
 		"-e", e2adcflag, "-g", grid, "--checkpoint="+str(ckpt), "-i", instrument,
@@ -86,7 +88,7 @@ def runphosimpy(instancecatalog, extracommands, e2adcflag, log, grid="no", ckpt=
 def runuser():
 	ckptnum=checkpointVar.get()
 	sensorstr=sensorVar.get()
-	runphosimpy(instancecatalog=options[INSTANCECATALOG], extracommands=options[EXTRACOMMANDS], e2adcflag=options[E2ADC], log=log, 
+	runphosimpy(instancecatalog=options[INSTANCECATALOG], extracommands=options[EXTRACOMMANDS], e2adcflag=options[E2ADC],
 		instrument=options[INSTRUMENT],sensor=sensorstr,grid=options[GRID],ckpt=ckptnum)
 	
 def runcalibration():
@@ -101,9 +103,9 @@ def runcalibration():
 	
 	for cat in commands:
 		if "flat" in cat:
-			runphosimpy(instancecatalog=cat, extracommands="none", e2adcflag="1", log=log, grid="diagrid", ckpt=54)
+			runphosimpy(instancecatalog=cat, extracommands="none", e2adcflag="1", grid="diagrid", ckpt=54)
 		else:
-			runphosimpy(instancecatalog=cat, extracommands="none", e2adcflag="1", log=log, grid="diagrid", ckpt=0)
+			runphosimpy(instancecatalog=cat, extracommands="none", e2adcflag="1", grid="diagrid", ckpt=0)
 
 def runvalidation():
 	script = vscripts[vscript.get()]
